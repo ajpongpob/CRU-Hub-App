@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow Piano Master - เกมกดเสียงเปียโน 20 ข้อ 3 โหมด</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Kanit and Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;800&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        kanit: ['Kanit', 'sans-serif'],
+                        fredoka: ['Fredoka', 'cursive']
+                    },
+                    colors: {
+                        rainbowRed: '#FF4B4B',
+                        rainbowOrange: '#FF8C42',
+                        rainbowYellow: '#FFD166',
+                        rainbowGreen: '#06D6A0',
+                        rainbowBlue: '#118AB2',
+                        rainbowPurple: '#8338EC'
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 0.6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-short': 'bounce 0.5s ease-in-out 2',
+                        'rainbow-glow': 'rainbowGlow 4s linear infinite'
+                    },
+                    keyframes: {
+                        rainbowGlow: {
+                            '0%, 100%': { filter: 'drop-shadow(0 0 15px rgba(255, 75, 75, 0.6))' },
+                            '33%': { filter: 'drop-shadow(0 0 15px rgba(6, 214, 160, 0.6))' },
+                            '66%': { filter: 'drop-shadow(0 0 15px rgba(131, 56, 236, 0.6))' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 30%, #a1c4fd 70%, #c2e9fb 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .piano-container {
+            perspective: 1000px;
+        }
+
+        .white-key {
+            background: linear-gradient(to bottom, #ffffff 0%, #f3f3f3 85%, #e0e0e0 100%);
+            border: 2px solid #cbd5e1;
+            border-bottom-width: 6px;
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+            transition: all 0.08s ease;
+        }
+
+        .white-key.active, .white-key:active {
+            background: linear-gradient(to bottom, #e2e8f0 0%, #38bdf8 100%);
+            border-bottom-width: 2px;
+            transform: translateY(4px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .black-key {
+            background: linear-gradient(to bottom, #334155 0%, #0f172a 100%);
+            border: 1px solid #1e293b;
+            border-bottom-width: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            transition: all 0.08s ease;
+            z-index: 20;
+        }
+
+        .black-key.active, .black-key:active {
+            background: linear-gradient(to bottom, #475569 0%, #818cf8 100%);
+            border-bottom-width: 2px;
+            transform: translateY(3px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            border: 3px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .rainbow-text {
+            background: linear-gradient(45deg, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .beat-lamp {
+            transition: transform 0.08s ease, background-color 0.08s ease;
+        }
+
+        .beat-lamp.flash {
+            transform: scale(1.4);
+            background-color: #f59e0b !important;
+            box-shadow: 0 0 18px #f59e0b, 0 0 35px #f59e0b;
+        }
+
+        @keyframes rainbowBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .rainbow-bg-animated {
+            background: linear-gradient(-45deg, #ff7675, #fdcb6e, #55efc4, #74b9ff, #a29bfe);
+            background-size: 300% 300%;
+            animation: rainbowBg 8s ease infinite;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-2 sm:p-4 text-slate-800">
+
+    <header class="w-full max-w-4xl flex flex-wrap items-center justify-between gap-2 p-3 bg-white/90 rounded-2xl shadow-lg border-2 border-white mb-3">
+        <div class="flex items-center space-x-3">
+            <div class="w-11 h-11 rounded-xl rainbow-bg-animated flex items-center justify-center text-white text-2xl shadow-md">
+                <i class="fa-solid fa-music"></i>
+            </div>
+            <div>
+                <h1 class="font-fredoka text-xl sm:text-2xl font-bold rainbow-text leading-tight">Rainbow Piano Master</h1>
+                <p class="text-xs text-slate-500 font-medium">เกมทดสอบทักษะเปียโน 20 ข้อสุดท้าทาย!</p>
+            </div>
+        </div>
+
+        <!-- Metronome BPM Indicator & Audio Controls -->
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                <i class="fa-solid fa-clock-rotate-left text-amber-500"></i>
+                <span class="text-xs font-bold text-slate-700">Metronome:</span>
+                <span id="bpmDisplay" class="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">80 BPM</span>
+                <div id="beatLamp" class="w-3.5 h-3.5 rounded-full bg-slate-300 border border-slate-400 beat-lamp"></div>
+            </div>
+
+            <button id="toggleSoundBtn" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-indigo-200">
+                <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+                <span id="soundLabel">เสียงเปิด</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="w-full max-w-4xl flex-1 flex flex-col justify-between gap-3">
+
+        <div id="modeSelectPanel" class="glass-panel rounded-3xl p-5 text-center flex flex-col items-center my-auto transition-all duration-300">
+            <div class="inline-block px-4 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full mb-2">
+                🌈 กรุณาเลือกโหมดการเล่น (ทั้งหมด 20 ข้อ)
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-4">พร้อมฝึกทักษะดนตรีหรือยัง?</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl mb-6">
+                <!-- Mode 1 Card: Sight Reading -->
+                <div onclick="selectGameMode(1)" class="mode-card group cursor-pointer bg-gradient-to-br from-rose-50 to-pink-100 hover:from-rose-100 hover:to-pink-200 p-5 rounded-2xl border-2 border-rose-300 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 text-left flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center text-2xl mb-3 shadow-md group-hover:scale-110 transition">
+                            <i class="fa-solid fa-eye"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-lg mb-1">โหมดที่ 1: ดูโน้ต</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">อ่านตัวโน้ตบนบรรทัด 5 เส้น และกดคีย์เปียโนให้ถูกต้องตามลำดับ</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-rose-200/60 flex justify-between items-center text-xs font-bold text-rose-600">
+                        <span>เน้นสายตา & อ่านโน้ต</span>
+                        <i class="fa-solid fa-circle-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Mode 2 Card: Ear Training -->
+                <div onclick="selectGameMode(2)" class="mode-card group cursor-pointer bg-gradient-to-br from-indigo-50 to-purple-100 hover:from-indigo-100 hover:to-purple-200 p-5 rounded-2xl border-2 border-indigo-300 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 text-left flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center text-2xl mb-3 shadow-md group-hover:scale-110 transition">
+                            <i class="fa-solid fa-ear-listen"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-lg mb-1">โหมดที่ 2: ฟังเสียง</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">ฟังเสียงเปียโนแล้วแกะโน้ตทางหู จากนั้นกดตอบกลับให้ถูกต้อง</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-indigo-200/60 flex justify-between items-center text-xs font-bold text-indigo-600">
+                        <span>เน้นการฟัง (Ear Training)</span>
+                        <i class="fa-solid fa-circle-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Mode 3 Card: Rhythm & Metronome -->
+                <div onclick="selectGameMode(3)" class="mode-card group cursor-pointer bg-gradient-to-br from-emerald-50 to-teal-100 hover:from-emerald-100 hover:to-teal-200 p-5 rounded-2xl border-2 border-emerald-300 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 text-left flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl mb-3 shadow-md group-hover:scale-110 transition">
+                            <i class="fa-solid fa-drum"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-lg mb-1">โหมดที่ 3: จังหวะ 80 BPM</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">กดโน้ตไปพร้อมเสียง Metronome 80 BPM คอยให้สัญญาณจังหวะ</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-emerald-200/60 flex justify-between items-center text-xs font-bold text-emerald-600">
+                        <span>คุมจังหวะเป๊ะ</span>
+                        <i class="fa-solid fa-circle-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Banner -->
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 max-w-2xl text-left text-xs text-amber-900 space-y-1.5">
+                <p class="font-bold text-amber-800 flex items-center gap-1.5 text-sm">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> กฎและเงื่อนไขการเล่น:
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-slate-700">
+                    <li>เกมมีทั้งหมด <b>20 ข้อ</b> เรียงระดับจากง่ายไปยาก (ข้อท้ายๆ จะเป็นทำนอง/คอร์ด)</li>
+                    <li>มีการนับเวลาถอยหลัง <b>4 วินาที</b> ก่อนเริ่มเล่นในแต่ละข้อ</li>
+                    <li>⚠️ <b>ถ้ากดผิดแม้แต่โน้ตเดียว จะต้องเริ่มใหม่ทันที!</b></li>
+                    <li>สามารถกดเล่นได้ทั้งสัมผัสหน้าจอ / เม้าส์ หรือกดคีย์บอร์ด (A, S, D, F, G, H, J, K, L, ;, /)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="gamePlayArea" class="hidden flex-1 flex flex-col justify-between gap-3">
+
+            <!-- HUD Header -->
+            <div class="flex items-center justify-between bg-white/90 px-4 py-2.5 rounded-2xl shadow-sm border border-white">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-slate-500">ข้อที่:</span>
+                    <span id="currentQuestionText" class="text-lg font-black text-rose-500 bg-rose-50 px-3 py-0.5 rounded-xl border border-rose-200">1 / 20</span>
+                    <span id="difficultyBadge" class="text-[11px] font-extrabold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-lg">ระดับง่าย</span>
+                </div>
+
+                <div id="activeModeBadge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-100 text-indigo-700 text-xs font-bold">
+                    <i class="fa-solid fa-eye"></i> โหมด: ดูโน้ต
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <div class="text-[10px] uppercase font-bold text-slate-400">คะแนน</div>
+                        <div id="scoreDisplay" class="text-xl font-black text-emerald-600 font-fredoka">0</div>
+                    </div>
+                    <div class="text-right border-l pl-3 border-slate-200">
+                        <div class="text-[10px] uppercase font-bold text-slate-400">Combo</div>
+                        <div id="comboDisplay" class="text-xl font-black text-purple-600 font-fredoka">0x</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative glass-panel rounded-3xl p-4 sm:p-6 flex flex-col items-center justify-center min-h-[220px] overflow-hidden">
+                
+                <!-- 4-Second Countdown Overlay -->
+                <div id="countdownOverlay" class="absolute inset-0 z-40 bg-slate-900/85 backdrop-blur-md flex flex-col items-center justify-center text-white transition-all">
+                    <div class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2">เตรียมตัวให้พร้อม!</div>
+                    <div id="countdownNumber" class="text-7xl font-black font-fredoka text-amber-300 animate-bounce-short">4</div>
+                    <div id="countdownSubtext" class="text-sm font-medium text-slate-200 mt-2">กำลังเตรียมข้อที่ 1...</div>
+                </div>
+
+                <!-- Sight Reading Canvas Display (Modes 1 & 3) -->
+                <div id="sheetMusicWrapper" class="w-full flex flex-col items-center justify-center">
+                    <div class="text-xs font-bold text-slate-500 mb-1 flex items-center gap-2">
+                        <span>บรรทัด 5 เส้น (Treble Clef)</span>
+                        <span id="sequenceProgress" class="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md font-extrabold hidden">โน้ต 1 จาก 3</span>
+                    </div>
+                    <div class="relative bg-white/95 p-3 rounded-2xl shadow-inner border border-slate-200 w-full max-w-lg flex justify-center">
+                        <canvas id="staffCanvas" width="450" height="130" class="max-w-full h-auto"></canvas>
+                    </div>
+                </div>
+
+                <!-- Ear Training Sound Player Stage (Mode 2) -->
+                <div id="earTrainingWrapper" class="hidden w-full flex flex-col items-center justify-center py-4">
+                    <div class="w-20 h-20 rounded-full bg-indigo-500 text-white flex items-center justify-center text-4xl shadow-xl mb-3 animate-pulse">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800">ฟังเสียงโน้ตแล้วตั้งใจตอบ!</h3>
+                    <p class="text-xs text-slate-500 mb-4">กดปุ่มฟังซ้ำหากฟังไม่ทัน</p>
+                    
+                    <button id="replaySoundBtn" onclick="playCurrentQuestionSound()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-sm shadow-md transition flex items-center gap-2 transform active:scale-95">
+                        <i class="fa-solid fa-volume-high"></i> ฟังเสียงอีกครั้ง
+                    </button>
+                </div>
+
+                <!-- Feedback Text Banner -->
+                <div id="feedbackBanner" class="mt-3 text-center min-h-[28px]">
+                    <span id="feedbackText" class="text-sm font-bold text-slate-700 bg-white/80 px-4 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                        กดโน้ตบนคีย์เปียโนด้านล่าง
+                    </span>
+                </div>
+            </div>
+
+            <div class="w-full bg-slate-900 p-3 sm:p-4 rounded-3xl shadow-2xl border-4 border-slate-800 piano-container relative">
+                <div class="flex justify-between items-center mb-2 px-2 text-slate-400 text-xs font-mono">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                        <span class="text-[11px] text-slate-300">OCTAVE C4 - F5</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 hidden sm:block">
+                        💡 คีย์บอร์ด: A S D F G H J K L ; / (ลิ่มดำ W E T Y U O P)
+                    </div>
+                </div>
+
+                <!-- Keyboard Container -->
+                <div class="relative w-full h-44 sm:h-52 flex justify-center items-start select-none touch-none" id="pianoKeyboard">
+                    <!-- Dynamic Piano Keys Generated via JS -->
+                </div>
+            </div>
+
+        </div>
+
+        <div id="resultModal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-lg flex items-center justify-center p-4">
+            <div class="glass-panel max-w-md w-full rounded-3xl p-6 sm:p-8 text-center shadow-2xl relative border-4 border-white animate-bounce-short">
+                
+                <div id="resultIconBox" class="w-20 h-20 mx-auto rounded-3xl bg-rose-500 text-white flex items-center justify-center text-4xl shadow-xl mb-4">
+                    <i class="fa-solid fa-xmark"></i>
+                </div>
+
+                <h2 id="resultTitle" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-1">ตอบผิด! เริ่มใหม่ทันที</h2>
+                <p id="resultSubtitle" class="text-xs sm:text-sm text-slate-600 mb-5">คุณกดพลาดโน้ตตัวถูกต้อง ลองใหม่อีกครั้ง!</p>
+
+                <!-- Stats Summary -->
+                <div class="bg-slate-100 rounded-2xl p-4 mb-6 space-y-2 text-left text-xs sm:text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">ผ่านได้ทั้งหมด:</span>
+                        <span id="finalLevelText" class="font-extrabold text-slate-800">0 / 20 ข้อ</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">คะแนนรวม:</span>
+                        <span id="finalScoreText" class="font-extrabold text-emerald-600 text-lg">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">ความแม่นยำ:</span>
+                        <span id="finalAccuracyText" class="font-extrabold text-indigo-600">0%</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="returnToMainMenu()" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-2xl text-xs sm:text-sm transition">
+                        <i class="fa-solid fa-house mr-1"></i> เมนูหลัก
+                    </button>
+                    <button onclick="restartGame()" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-md transition">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> เล่นอีกครั้ง
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="mt-4 text-center text-xs text-slate-600 font-medium">
+        Rainbow Piano Master • Web Audio API Synthesizer • 20 Levels Challenge
+    </footer>
+
+    <script>
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.isMuted = false;
+                this.metronomeInterval = null;
+                this.bpm = 80;
+                this.isMetronomeRunning = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            // Piano Note Synthesizer (Triangle + Sine harmonic overtone)
+            playNote(freq, duration = 1.2) {
+                if (this.isMuted) return;
+                this.init();
+
+                const now = this.ctx.currentTime;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now);
+
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(freq * 2, now); // 2nd harmonic for piano brightness
+
+                gain.gain.setValueAtTime(0.65, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                gain2.gain.setValueAtTime(0.2, now);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + (duration * 0.7));
+
+                osc.connect(gain);
+                osc2.connect(gain2);
+
+                gain.connect(this.ctx.destination);
+                gain2.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc2.start(now);
+
+                osc.stop(now + duration);
+                osc2.stop(now + duration);
+            }
+
+            // Metronome Tick Sound Generator
+            playClick(isAccent = false) {
+                if (this.isMuted) return;
+                this.init();
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(isAccent ? 1200 : 800, now);
+
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.05);
+
+                // Flash Metronome Indicator Light
+                const lamp = document.getElementById('beatLamp');
+                if (lamp) {
+                    lamp.classList.add('flash');
+                    setTimeout(() => lamp.classList.remove('flash'), 100);
+                }
+            }
+
+            startMetronome(bpm = 80) {
+                this.stopMetronome();
+                this.bpm = bpm;
+                this.isMetronomeRunning = true;
+                const intervalMs = (60 / this.bpm) * 1000;
+                let beatCount = 0;
+
+                this.metronomeInterval = setInterval(() => {
+                    this.playClick(beatCount % 4 === 0);
+                    beatCount++;
+                }, intervalMs);
+            }
+
+            stopMetronome() {
+                if (this.metronomeInterval) {
+                    clearInterval(this.metronomeInterval);
+                    this.metronomeInterval = null;
+                }
+                this.isMetronomeRunning = false;
+            }
+        }
+
+        const soundEngine = new AudioEngine();
+
+        const NOTES_DATA = [
+            { note: 'C4', label: 'C4', freq: 261.63, type: 'white', keyBind: 'a', staffPos: -2 },
+            { note: 'C#4', label: 'C#4', freq: 277.18, type: 'black', keyBind: 'w', staffPos: -2 },
+            { note: 'D4', label: 'D4', freq: 293.66, type: 'white', keyBind: 's', staffPos: -1.5 },
+            { note: 'D#4', label: 'D#4', freq: 311.13, type: 'black', keyBind: 'e', staffPos: -1.5 },
+            { note: 'E4', label: 'E4', freq: 329.63, type: 'white', keyBind: 'd', staffPos: -1 },
+            { note: 'F4', label: 'F4', freq: 349.23, type: 'white', keyBind: 'f', staffPos: -0.5 },
+            { note: 'F#4', label: 'F#4', freq: 369.99, type: 'black', keyBind: 't', staffPos: -0.5 },
+            { note: 'G4', label: 'G4', freq: 392.00, type: 'white', keyBind: 'g', staffPos: 0 },
+            { note: 'G#4', label: 'G#4', freq: 415.30, type: 'black', keyBind: 'y', staffPos: 0 },
+            { note: 'A4', label: 'A4', freq: 440.00, type: 'white', keyBind: 'h', staffPos: 0.5 },
+            { note: 'A#4', label: 'A#4', freq: 466.16, type: 'black', keyBind: 'u', staffPos: 0.5 },
+            { note: 'B4', label: 'B4', freq: 493.88, type: 'white', keyBind: 'j', staffPos: 1 },
+            { note: 'C5', label: 'C5', freq: 523.25, type: 'white', keyBind: 'k', staffPos: 1.5 },
+            { note: 'C#5', label: 'C#5', freq: 554.37, type: 'black', keyBind: 'o', staffPos: 1.5 },
+            { note: 'D5', label: 'D5', freq: 587.33, type: 'white', keyBind: 'l', staffPos: 2 },
+            { note: 'D#5', label: 'D#5', freq: 622.25, type: 'black', keyBind: 'p', staffPos: 2 },
+            { note: 'E5', label: 'E5', freq: 659.25, type: 'white', keyBind: ';', staffPos: 2.5 },
+            { note: 'F5', label: 'F5', freq: 698.46, type: 'white', keyBind: '/', staffPos: 3 }
+        ];
+
+        const GAME_LEVELS = [
+            // Levels 1-5: Basic Single White Keys
+            { id: 1, difficulty: 'ง่าย', scoreVal: 100, sequence: ['C4'] },
+            { id: 2, difficulty: 'ง่าย', scoreVal: 100, sequence: ['G4'] },
+            { id: 3, difficulty: 'ง่าย', scoreVal: 100, sequence: ['E4'] },
+            { id: 4, difficulty: 'ง่าย', scoreVal: 110, sequence: ['F4'] },
+            { id: 5, difficulty: 'ง่าย', scoreVal: 120, sequence: ['C5'] },
+
+            // Levels 6-10: Extended Octave & Sharps (#)
+            { id: 6, difficulty: 'ปานกลาง', scoreVal: 150, sequence: ['A4'] },
+            { id: 7, difficulty: 'ปานกลาง', scoreVal: 160, sequence: ['D5'] },
+            { id: 8, difficulty: 'ปานกลาง', scoreVal: 180, sequence: ['F#4'] },
+            { id: 9, difficulty: 'ปานกลาง', scoreVal: 190, sequence: ['C#4'] },
+            { id: 10, difficulty: 'ปานกลาง', scoreVal: 200, sequence: ['A#4'] },
+
+            // Levels 11-15: 2 to 3 Note Sequences & Intervals
+            { id: 11, difficulty: 'ท้าทาย', scoreVal: 250, sequence: ['C4', 'G4'] },
+            { id: 12, difficulty: 'ท้าทาย', scoreVal: 260, sequence: ['E4', 'A4'] },
+            { id: 13, difficulty: 'ท้าทาย', scoreVal: 280, sequence: ['D4', 'F#4'] },
+            { id: 14, difficulty: 'ท้าทาย', scoreVal: 300, sequence: ['G4', 'C5'] },
+            { id: 15, difficulty: 'ท้าทาย', scoreVal: 320, sequence: ['C4', 'E4', 'G4'] }, // C Major Triad
+
+            // Levels 16-20: Advanced Multi-Note Melodies & Chords
+            { id: 16, difficulty: 'ยากมาก', scoreVal: 400, sequence: ['F4', 'A4', 'C5'] }, // F Major
+            { id: 17, difficulty: 'ยากมาก', scoreVal: 450, sequence: ['G4', 'B4', 'D5'] }, // G Major
+            { id: 18, difficulty: 'ยากมาก', scoreVal: 500, sequence: ['C4', 'D4', 'E4', 'F4'] }, // Stepwise Scale
+            { id: 19, difficulty: 'เซียนเปียโน', scoreVal: 600, sequence: ['E4', 'G#4', 'B4', 'E5'] }, // E Major
+            { id: 20, difficulty: 'บอสใหญ่!', scoreVal: 800, sequence: ['C4', 'E4', 'G4', 'B4', 'C5'] } // Ultimate Arpeggio
+        ];
+
+        let currentMode = 1;
+        let currentLevelIdx = 0;
+        let score = 0;
+        let combo = 0;
+        let userSequenceIndex = 0;
+        let countdownTimer = null;
+        let isGameActive = false;
+        let totalAttempts = 0;
+        let correctInputs = 0;
+
+        function buildPianoKeyboard() {
+            const keybed = document.getElementById('pianoKeyboard');
+            keybed.innerHTML = '';
+
+            const whiteNotes = NOTES_DATA.filter(n => n.type === 'white');
+            const whiteKeyWidthPercent = 100 / whiteNotes.length;
+
+            // Render White Keys
+            whiteNotes.forEach((note, index) => {
+                const keyEl = document.createElement('div');
+                keyEl.className = 'white-key absolute top-0 rounded-b-xl flex flex-col justify-end items-center pb-2 cursor-pointer font-bold text-slate-700 text-xs sm:text-sm shadow-md transition';
+                keyEl.style.left = `${index * whiteKeyWidthPercent}%`;
+                keyEl.style.width = `${whiteKeyWidthPercent}%`;
+                keyEl.style.height = '100%';
+                keyEl.dataset.note = note.note;
+
+                keyEl.innerHTML = `
+                    <span class="text-[10px] text-slate-400 font-mono uppercase">${note.keyBind}</span>
+                    <span class="font-extrabold text-slate-800">${note.note}</span>
+                `;
+
+                keyEl.addEventListener('mousedown', (e) => { e.preventDefault(); handleKeyPress(note.note); });
+                keyEl.addEventListener('touchstart', (e) => { e.preventDefault(); handleKeyPress(note.note); });
+
+                keybed.appendChild(keyEl);
+            });
+
+            // Render Black Keys
+            NOTES_DATA.filter(n => n.type === 'black').forEach((note) => {
+                const baseWhiteIdx = whiteNotes.findIndex(w => w.note[0] === note.note[0] && w.note[w.note.length-1] === note.note[note.note.length-1]);
+                if (baseWhiteIdx !== -1) {
+                    const keyEl = document.createElement('div');
+                    keyEl.className = 'black-key absolute top-0 rounded-b-lg flex flex-col justify-end items-center pb-2 cursor-pointer text-white font-bold text-[10px] shadow-lg';
+                    const leftPos = (baseWhiteIdx + 0.65) * whiteKeyWidthPercent;
+                    keyEl.style.left = `${leftPos}%`;
+                    keyEl.style.width = `${whiteKeyWidthPercent * 0.7}%`;
+                    keyEl.style.height = '62%';
+                    keyEl.dataset.note = note.note;
+
+                    keyEl.innerHTML = `
+                        <span class="text-[9px] text-amber-300 font-mono">${note.keyBind}</span>
+                    `;
+
+                    keyEl.addEventListener('mousedown', (e) => { e.preventDefault(); handleKeyPress(note.note); });
+                    keyEl.addEventListener('touchstart', (e) => { e.preventDefault(); handleKeyPress(note.note); });
+
+                    keybed.appendChild(keyEl);
+                }
+            });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
+            const key = e.key.toLowerCase();
+            const matchedNote = NOTES_DATA.find(n => n.keyBind === key);
+            if (matchedNote) {
+                handleKeyPress(matchedNote.note);
+            }
+        });
+
+        function handleKeyPress(noteName) {
+            const noteData = NOTES_DATA.find(n => n.note === noteName);
+            if (noteData) {
+                soundEngine.playNote(noteData.freq);
+                animateKeyVisual(noteName);
+            }
+
+            if (!isGameActive) return;
+
+            const targetLevel = GAME_LEVELS[currentLevelIdx];
+            const expectedNote = targetLevel.sequence[userSequenceIndex];
+
+            totalAttempts++;
+
+            if (noteName === expectedNote) {
+                // Correct Note
+                correctInputs++;
+                userSequenceIndex++;
+                
+                showFeedback(`ถูกต้อง! (${userSequenceIndex}/${targetLevel.sequence.length})`, 'text-emerald-600');
+
+                if (userSequenceIndex >= targetLevel.sequence.length) {
+                    combo++;
+                    const comboBonus = combo * 20;
+                    score += targetLevel.scoreVal + comboBonus;
+                    updateHUD();
+
+                    currentLevelIdx++;
+
+                    if (currentLevelIdx >= GAME_LEVELS.length) {
+                        finishGame(true);
+                    } else {
+                        isGameActive = false;
+                        setTimeout(() => {
+                            startLevelCountdown();
+                        }, 800);
+                    }
+                } else {
+                    updateSequenceProgress();
+                }
+            } else {
+                // Wrong Note Rule: Immediate Restart Modal Trigger
+                combo = 0;
+                updateHUD();
+                showFeedback(`ผิดพลาด! (คุณกด ${noteName} แต่ต้องเป็น ${expectedNote})`, 'text-rose-600');
+                
+                setTimeout(() => {
+                    finishGame(false);
+                }, 400);
+            }
+        }
+
+        function animateKeyVisual(noteName) {
+            const keyEl = document.querySelector(`[data-note="${noteName}"]`);
+            if (keyEl) {
+                keyEl.classList.add('active');
+                setTimeout(() => keyEl.classList.remove('active'), 180);
+            }
+        }
+
+        function drawStaffAndNotes(activeNoteList = [], currentStepIdx = 0) {
+            const canvas = document.getElementById('staffCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const startY = 35;
+            const lineSpacing = 14;
+            const staffLeft = 30;
+            const staffRight = canvas.width - 30;
+
+            // Draw 5 Staff Lines
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                const y = startY + (i * lineSpacing);
+                ctx.beginPath();
+                ctx.moveTo(staffLeft, y);
+                ctx.lineTo(staffRight, y);
+                ctx.stroke();
+            }
+
+            // Draw Treble Clef symbol 𝄞
+            ctx.fillStyle = '#1e293b';
+            ctx.font = '54px serif';
+            ctx.fillText('𝄞', staffLeft + 10, startY + (lineSpacing * 3.5));
+
+            const g4Y = startY + (3 * lineSpacing);
+
+            if (currentMode === 2) {
+                ctx.fillStyle = '#6366f1';
+                ctx.font = 'bold 28px Kanit';
+                ctx.fillText('🔊 ฟังเสียงแล้วกดโน้ต', staffLeft + 120, startY + (lineSpacing * 2.5));
+                return;
+            }
+
+            const noteSpacing = Math.min(60, (staffRight - staffLeft - 120) / (activeNoteList.length || 1));
+            const startNoteX = staffLeft + 120;
+
+            activeNoteList.forEach((noteName, idx) => {
+                const noteInfo = NOTES_DATA.find(n => n.note === noteName);
+                if (!noteInfo) return;
+
+                const noteX = startNoteX + (idx * noteSpacing);
+                const noteY = g4Y - (noteInfo.staffPos * lineSpacing);
+
+                const isCurrentNote = (idx === currentStepIdx);
+                const isPastNote = (idx < currentStepIdx);
+
+                if (isCurrentNote) {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.strokeStyle = '#ef4444';
+                } else if (isPastNote) {
+                    ctx.fillStyle = '#10b981';
+                    ctx.strokeStyle = '#10b981';
+                } else {
+                    ctx.fillStyle = '#1e293b';
+                    ctx.strokeStyle = '#1e293b';
+                }
+
+                // Draw Ledger line for C4
+                if (noteName === 'C4') {
+                    const ledgerY = g4Y + (2 * lineSpacing);
+                    ctx.beginPath();
+                    ctx.moveTo(noteX - 14, ledgerY);
+                    ctx.lineTo(noteX + 14, ledgerY);
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Draw Sharp symbol (#) if black key
+                if (noteName.includes('#')) {
+                    ctx.font = 'bold 18px sans-serif';
+                    ctx.fillText('♯', noteX - 18, noteY + 6);
+                }
+
+                // Draw Note Head
+                ctx.beginPath();
+                ctx.ellipse(noteX, noteY, 8, 6, -0.2, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // Draw Note Stem
+                ctx.beginPath();
+                ctx.lineWidth = 2.5;
+                if (noteInfo.staffPos >= 1) {
+                    ctx.moveTo(noteX - 7, noteY);
+                    ctx.lineTo(noteX - 7, noteY + 32);
+                } else {
+                    ctx.moveTo(noteX + 7, noteY);
+                    ctx.lineTo(noteX + 7, noteY - 32);
+                }
+                ctx.stroke();
+
+                // Note Name Label
+                ctx.fillStyle = isCurrentNote ? '#ef4444' : '#64748b';
+                ctx.font = 'bold 12px Kanit';
+                ctx.textAlign = 'center';
+                ctx.fillText(noteName, noteX, startY + (5 * lineSpacing) + 20);
+                ctx.textAlign = 'left';
+            });
+        }
+
+        function selectGameMode(modeNumber) {
+            currentMode = modeNumber;
+            document.getElementById('modeSelectPanel').classList.add('hidden');
+            document.getElementById('gamePlayArea').classList.remove('hidden');
+
+            const modeBadge = document.getElementById('activeModeBadge');
+            if (modeNumber === 1) {
+                modeBadge.innerHTML = `<i class="fa-solid fa-eye"></i> โหมด: ดูโน้ต`;
+                document.getElementById('sheetMusicWrapper').classList.remove('hidden');
+                document.getElementById('earTrainingWrapper').classList.add('hidden');
+            } else if (modeNumber === 2) {
+                modeBadge.innerHTML = `<i class="fa-solid fa-ear-listen"></i> โหมด: ฟังเสียง`;
+                document.getElementById('sheetMusicWrapper').classList.add('hidden');
+                document.getElementById('earTrainingWrapper').classList.remove('hidden');
+            } else {
+                modeBadge.innerHTML = `<i class="fa-solid fa-drum"></i> โหมด: จังหวะ 80 BPM`;
+                document.getElementById('sheetMusicWrapper').classList.remove('hidden');
+                document.getElementById('earTrainingWrapper').classList.add('hidden');
+            }
+
+            // Always start background 80 BPM Metronome as requested
+            soundEngine.startMetronome(80);
+
+            currentLevelIdx = 0;
+            score = 0;
+            combo = 0;
+            totalAttempts = 0;
+            correctInputs = 0;
+            updateHUD();
+
+            startLevelCountdown();
+        }
+
+        /* 4-Second Pre-Game Countdown Timer */
+        function startLevelCountdown() {
+            isGameActive = false;
+            userSequenceIndex = 0;
+
+            const overlay = document.getElementById('countdownOverlay');
+            const numEl = document.getElementById('countdownNumber');
+            const subtext = document.getElementById('countdownSubtext');
+
+            overlay.classList.remove('hidden');
+            let secondsLeft = 4; // Mandatory 4-second countdown
+
+            numEl.innerText = secondsLeft;
+            subtext.innerText = `กำลังเตรียมข้อที่ ${currentLevelIdx + 1} / 20...`;
+
+            const level = GAME_LEVELS[currentLevelIdx];
+            drawStaffAndNotes(level.sequence, 0);
+
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            countdownTimer = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft > 0) {
+                    numEl.innerText = secondsLeft;
+                    soundEngine.playClick(false);
+                } else if (secondsLeft === 0) {
+                    numEl.innerText = 'GO!';
+                    soundEngine.playClick(true);
+                } else {
+                    clearInterval(countdownTimer);
+                    overlay.classList.add('hidden');
+                    isGameActive = true;
+
+                    if (currentMode === 2) {
+                        playCurrentQuestionSound();
+                    }
+
+                    showFeedback('กดโน้ตบนคีย์เปียโน!', 'text-indigo-600');
+                    updateSequenceProgress();
+                }
+            }, 1000);
+        }
+
+        function playCurrentQuestionSound() {
+            const level = GAME_LEVELS[currentLevelIdx];
+            level.sequence.forEach((noteName, i) => {
+                setTimeout(() => {
+                    const noteInfo = NOTES_DATA.find(n => n.note === noteName);
+                    if (noteInfo) soundEngine.playNote(noteInfo.freq, 0.8);
+                }, i * 600);
+            });
+        }
+
+        function updateSequenceProgress() {
+            const level = GAME_LEVELS[currentLevelIdx];
+            drawStaffAndNotes(level.sequence, userSequenceIndex);
+
+            const seqProgressText = document.getElementById('sequenceProgress');
+            if (level.sequence.length > 1) {
+                seqProgressText.classList.remove('hidden');
+                seqProgressText.innerText = `โน้ตที่ ${userSequenceIndex + 1} จาก ${level.sequence.length}`;
+            } else {
+                seqProgressText.classList.add('hidden');
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('currentQuestionText').innerText = `${currentLevelIdx + 1} / 20`;
+            document.getElementById('scoreDisplay').innerText = score.toLocaleString();
+            document.getElementById('comboDisplay').innerText = `${combo}x`;
+
+            const level = GAME_LEVELS[currentLevelIdx] || GAME_LEVELS[GAME_LEVELS.length - 1];
+            document.getElementById('difficultyBadge').innerText = `ระดับ: ${level.difficulty}`;
+        }
+
+        function showFeedback(msg, colorClass = 'text-slate-700') {
+            const fb = document.getElementById('feedbackText');
+            fb.innerText = msg;
+            fb.className = `text-sm font-bold bg-white/90 px-4 py-1.5 rounded-full border border-slate-200 shadow-sm ${colorClass}`;
+        }
+
+        function finishGame(isWin) {
+            isGameActive = false;
+
+            const modal = document.getElementById('resultModal');
+            const iconBox = document.getElementById('resultIconBox');
+            const title = document.getElementById('resultTitle');
+            const subtitle = document.getElementById('resultSubtitle');
+
+            if (isWin) {
+                iconBox.className = 'w-20 h-20 mx-auto rounded-3xl bg-emerald-500 text-white flex items-center justify-center text-4xl shadow-xl mb-4';
+                iconBox.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+                title.innerText = '🎉 ยินดีด้วย! ผ่านครบ 20 ข้อ!';
+                subtitle.innerText = 'คุณคือสุดยอดเซียนเปียโนสายรุ้งตัวจริง!';
+            } else {
+                iconBox.className = 'w-20 h-20 mx-auto rounded-3xl bg-rose-500 text-white flex items-center justify-center text-4xl shadow-xl mb-4';
+                iconBox.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                title.innerText = 'ตอบผิด! เริ่มใหม่ทันที';
+                subtitle.innerText = `พลาดในข้อที่ ${currentLevelIdx + 1} กดปุ่มด้านล่างเพื่อเริ่มท้าทายใหม่อีกครั้ง`;
+            }
+
+            document.getElementById('finalLevelText').innerText = `${currentLevelIdx} / 20 ข้อ`;
+            document.getElementById('finalScoreText').innerText = score.toLocaleString();
+            
+            const accuracy = totalAttempts > 0 ? Math.round((correctInputs / totalAttempts) * 100) : 0;
+            document.getElementById('finalAccuracyText').innerText = `${accuracy}%`;
+
+            modal.classList.remove('hidden');
+        }
+
+        function restartGame() {
+            document.getElementById('resultModal').classList.add('hidden');
+            soundEngine.startMetronome(80);
+            currentLevelIdx = 0;
+            score = 0;
+            combo = 0;
+            totalAttempts = 0;
+            correctInputs = 0;
+            updateHUD();
+            startLevelCountdown();
+        }
+
+        function returnToMainMenu() {
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('gamePlayArea').classList.add('hidden');
+            document.getElementById('modeSelectPanel').classList.remove('hidden');
+            soundEngine.stopMetronome();
+            if (countdownTimer) clearInterval(countdownTimer);
+        }
+
+        // Toggle Audio Mute
+        document.getElementById('toggleSoundBtn').addEventListener('click', () => {
+            soundEngine.isMuted = !soundEngine.isMuted;
+            const icon = document.getElementById('soundIcon');
+            const label = document.getElementById('soundLabel');
+            if (soundEngine.isMuted) {
+                icon.className = 'fa-solid fa-volume-xmark text-rose-500';
+                label.innerText = 'ปิดเสียง';
+            } else {
+                icon.className = 'fa-solid fa-volume-high text-indigo-600';
+                label.innerText = 'เสียงเปิด';
+            }
+        });
+
+        window.onload = function() {
+            buildPianoKeyboard();
+            drawStaffAndNotes(['C4', 'E4', 'G4'], 0);
+        };
+    </script>
+</body>
+</html>

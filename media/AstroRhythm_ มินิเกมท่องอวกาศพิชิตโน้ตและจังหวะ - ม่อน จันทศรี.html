@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroRhythm: มินิเกมท่องอวกาศพิชิตโน้ตและจังหวะ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Kanit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Star Background Effect */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: move-twinkle 4s infinite ease-in-out;
+        }
+
+        @keyframes move-twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.3); }
+        }
+
+        /* Glow utilities */
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+        }
+        .glow-purple {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
+        }
+        .glow-yellow {
+            box-shadow: 0 0 20px rgba(234, 179, 8, 0.7);
+        }
+
+        .text-glow-cyan {
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+        }
+        .text-glow-yellow {
+            text-shadow: 0 0 10px rgba(234, 179, 8, 0.8);
+        }
+
+        /* Custom Staff lines */
+        .staff-line {
+            height: 2px;
+            background: rgba(255, 255, 255, 0.25);
+            width: 100%;
+        }
+
+        /* Hit Pulse Feedback */
+        @keyframes pulse-hit {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.25); filter: brightness(1.8); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        .hit-correct {
+            animation: pulse-hit 0.3s ease-out;
+            color: #10B981 !important;
+        }
+
+        .hit-miss {
+            color: #EF4444 !important;
+        }
+
+        /* Spacebar press visual feedback */
+        .tap-active {
+            transform: scale(0.96);
+            background: linear-gradient(135deg, #06b6d4, #3b82f6) !important;
+            box-shadow: 0 0 30px #06b6d4 !important;
+        }
+
+        /* Custom Scrollbar for review modal */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.8);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="relative flex flex-col items-center justify-between min-h-screen p-3 md:p-6 overflow-x-hidden">
+
+    <div id="stars-bg" class="stars-container"></div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="relative z-10 w-full max-w-5xl flex flex-col items-center gap-4 my-auto">
+        
+        <!-- HEADER / NAVIGATION SCOREBOARD -->
+        <header class="w-full bg-slate-900/80 backdrop-blur-md border border-slate-700/60 rounded-2xl p-4 flex flex-wrap justify-between items-center shadow-2xl">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-cyan-500/20 border border-cyan-400/40 rounded-xl">
+                    <svg class="w-7 h-7 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 font-orbitron">ASTRORHYTHM</h1>
+                    <p class="text-xs text-slate-400">เรียนรู้ค่าโน้ตและฝึกเคาะจังหวะ 4/4</p>
+                </div>
+            </div>
+
+            <!-- SCORE & QUESTION COUNTER -->
+            <div class="flex items-center gap-3 sm:gap-6 mt-2 sm:mt-0">
+                <div class="bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-xl text-center">
+                    <span class="text-xs text-slate-400 block font-light">ข้อที่</span>
+                    <span id="level-display" class="text-lg font-bold text-cyan-300 font-orbitron">1 / 10</span>
+                </div>
+                <div class="bg-slate-800/90 border border-amber-500/40 px-4 py-1.5 rounded-xl text-center glow-yellow">
+                    <span class="text-xs text-amber-300 block font-light">คะแนนสะสม</span>
+                    <span id="total-score-display" class="text-xl font-black text-amber-400 font-orbitron text-glow-yellow">0</span>
+                </div>
+                <button id="theory-btn" onclick="openTheoryModal()" class="p-2 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-400/50 rounded-xl transition text-xs flex items-center gap-1.5 text-indigo-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>คู่มือโน้ต</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN GAME CARD -->
+        <main class="w-full bg-slate-900/85 backdrop-blur-xl border border-slate-700/80 rounded-3xl p-4 md:p-6 shadow-2xl relative overflow-hidden flex flex-col items-center">
+            
+            <!-- QUESTION INSTRUCTION HEADER -->
+            <div class="w-full flex flex-col md:flex-row justify-between items-center mb-4 bg-slate-800/60 p-3 rounded-2xl border border-slate-700/50 gap-2">
+                <div>
+                    <span id="q-title" class="text-sm md:text-base font-semibold text-cyan-300 font-orbitron">ข้อที่ 1: โน้ตตัวดำ 4 ตัว</span>
+                    <p id="q-desc" class="text-xs md:text-sm text-slate-300">เคาะ Spacebar ตามจังหวะโน้ตทั้ง 4 ตัวให้ตรงกับจังหวะเมโทรนอม</p>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700 text-xs text-slate-300">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>ความเร็ว: <strong class="text-emerald-400 font-orbitron">70 BPM</strong> (อัตราจังหวะ 4/4)</span>
+                </div>
+            </div>
+
+            <!-- RHYTHM STAFF DISPLAY CONTAINER -->
+            <div class="relative w-full bg-slate-950/90 border-2 border-indigo-500/40 rounded-2xl p-4 md:p-6 my-2 shadow-inner min-h-[220px] flex flex-col justify-center select-none overflow-hidden" id="staff-container">
+                
+                <!-- Time Signature 4/4 Badge -->
+                <div class="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center font-black font-orbitron text-2xl md:text-3xl text-indigo-400 border-r-2 border-slate-700 pr-3 z-10">
+                    <span>4</span>
+                    <span>4</span>
+                </div>
+
+                <!-- Measure Bar Line Endings -->
+                <div class="absolute right-4 top-1/4 bottom-1/4 w-1 bg-cyan-400 rounded-full z-10"></div>
+                <div class="absolute right-6 top-1/4 bottom-1/4 w-0.5 bg-cyan-400/60 z-10"></div>
+
+                <!-- 5 Staff Lines Background -->
+                <div class="w-full flex flex-col justify-between h-24 pl-14 md:pl-20 pr-8 my-auto">
+                    <div class="staff-line"></div>
+                    <div class="staff-line"></div>
+                    <div class="staff-line"></div>
+                    <div class="staff-line"></div>
+                    <div class="staff-line"></div>
+                </div>
+
+                <!-- Beat Markers Baseline (1, 2, 3, 4) -->
+                <div id="beat-markers" class="absolute left-16 md:left-24 right-8 bottom-2 flex justify-between text-xs font-orbitron text-slate-500 font-bold">
+                    <span>จังหวะ 1</span>
+                    <span>จังหวะ 2</span>
+                    <span>จังหวะ 3</span>
+                    <span>จังหวะ 4</span>
+                </div>
+
+                <!-- NOTES DISPLAY LAYER (Dynamic) -->
+                <div id="notes-layer" class="absolute left-16 md:left-24 right-8 top-0 bottom-0 pointer-events-none">
+                    <!-- Note SVGs inserted via JS -->
+                </div>
+
+                <!-- ASTRONAUT RUNNER / CURSOR -->
+                <div id="astronaut-cursor" class="absolute left-16 md:left-24 top-1/2 -translate-y-1/2 -ml-6 pointer-events-none z-20" style="transform: translate(0px, -50%);">
+                    <div class="relative flex flex-col items-center">
+                        <!-- Space Feedback Spark Text -->
+                        <div id="hit-feedback-text" class="absolute -top-10 font-bold font-orbitron text-sm md:text-base transition-all duration-200 opacity-0 whitespace-nowrap">
+                            PERFECT!
+                        </div>
+                        <!-- Astronaut Icon SVG -->
+                        <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-slate-900 border-2 border-cyan-400 p-1 shadow-lg shadow-cyan-500/50 flex items-center justify-center transform hover:scale-105">
+                            <svg class="w-full h-full text-cyan-300" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="32" cy="32" r="30" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+                                <!-- Helmet Visor -->
+                                <path d="M18 28C18 20 24 16 32 16C40 16 46 20 46 28C46 36 38 38 32 38C26 38 18 36 18 28Z" fill="url(#visorGrad)" stroke="#38BDF8" stroke-width="2"/>
+                                <!-- Helmet Highlight -->
+                                <ellipse cx="26" cy="24" rx="4" ry="2" fill="white" opacity="0.6"/>
+                                <!-- Suit Body -->
+                                <path d="M20 44C20 39 25 38 32 38C39 38 44 39 44 44V52H20V44Z" fill="#E2E8F0"/>
+                                <rect x="28" y="42" width="8" height="6" rx="1" fill="#0284C7"/>
+                                <!-- Visor Gradient -->
+                                <defs>
+                                    <linearGradient id="visorGrad" x1="18" y1="16" x2="46" y2="38" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#0284C7"/>
+                                        <stop offset="1" stop-color="#0F172A"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <!-- Running Beam Indicator -->
+                        <div class="w-1 h-8 bg-gradient-to-b from-cyan-400 to-transparent rounded-full mt-1 opacity-80"></div>
+                    </div>
+                </div>
+
+                <!-- COUNTDOWN / METRONOME COUNT OVERLAY -->
+                <div id="countdown-overlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-30 transition-opacity duration-300">
+                    <div id="count-number" class="text-6xl md:text-8xl font-black font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-cyan-300 to-purple-400 animate-bounce">
+                        พร้อม!
+                    </div>
+                    <p id="count-subtitle" class="text-sm md:text-base text-slate-300 mt-2 font-light">ฟังจังหวะเมโทรนอมนำ 4 จังหวะ...</p>
+                </div>
+
+            </div>
+
+            <!-- GAME CONTROLS & INTERACTION AREA -->
+            <div class="w-full mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                
+                <!-- Game Status Message -->
+                <div class="flex items-center space-x-3 text-slate-300 text-sm">
+                    <div id="metronome-light" class="w-4 h-4 rounded-full bg-slate-700 border border-slate-500"></div>
+                    <span id="game-status-text">กดปุ่ม "เริ่มเล่น" เพื่อเริ่มนับจังหวะ</span>
+                </div>
+
+                <!-- Main Action Buttons -->
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <button id="start-btn" onclick="startLevel()" class="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-2xl shadow-lg glow-cyan transition transform active:scale-95 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                        <span>เริ่มเล่น (ข้อนี้)</span>
+                    </button>
+                    
+                    <button id="space-tap-btn" onmousedown="handleTapPress(event)" ontouchstart="handleTapPress(event)" disabled class="flex-1 sm:flex-none px-8 py-3 bg-slate-800 border-2 border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-bold rounded-2xl shadow-lg transition transform opacity-50 cursor-not-allowed flex items-center justify-center gap-2 select-none">
+                        <kbd class="px-2 py-0.5 bg-slate-900 border border-slate-600 rounded text-xs font-orbitron">Spacebar</kbd>
+                        <span>กดเคาะจังหวะ!</span>
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- LEVEL SCORE SUMMARY CARD (Appears after each round) -->
+        <div id="round-summary-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-cyan-500/40 rounded-3xl p-6 max-w-lg w-full shadow-2xl flex flex-col items-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center mb-3 text-cyan-400">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 0118 0z"></path></svg>
+                </div>
+                <h2 id="round-result-title" class="text-2xl font-black text-cyan-300 font-orbitron">สรุปผลข้อที่ 1</h2>
+                <p id="round-score-text" class="text-lg text-slate-200 mt-1">คุณกดได้ <span class="text-amber-400 font-bold font-orbitron">4 / 4</span> โน้ต (+400 คะแนน)</p>
+                
+                <!-- Note Accuracy Details Breakdown -->
+                <div class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-4 my-4 text-left">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 font-orbitron">เฉลยความถูกต้องรายโน้ต:</h3>
+                    <div id="round-notes-breakdown" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Dynamic list of notes & hit status -->
+                    </div>
+                </div>
+
+                <button id="next-level-btn" onclick="nextLevel()" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <span>ลุยข้อถัดไป</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- FINAL GAME OVER / GRAND SUMMARY MODAL -->
+        <div id="final-summary-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl flex flex-col items-center text-center max-h-[90vh] overflow-y-auto">
+                <div class="w-20 h-20 rounded-3xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center mb-4 text-amber-400 glow-yellow animate-bounce">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                </div>
+                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 font-orbitron">ภารกิจสำเร็จ!</h2>
+                <p class="text-slate-300 text-sm mt-1">คุณได้เรียนรู้และฝึกปฏิบัติ rhythm โน้ตดนตรีสากล 10 บททดสอบ</p>
+
+                <!-- Final Score Display -->
+                <div class="my-5 p-4 bg-slate-950/80 border border-slate-800 rounded-2xl w-full flex justify-around items-center">
+                    <div>
+                        <span class="text-xs text-slate-400 block">คะแนนรวมทั้งหมด</span>
+                        <span id="final-score" class="text-3xl font-black text-amber-400 font-orbitron text-glow-yellow">0</span>
+                    </div>
+                    <div class="h-10 w-px bg-slate-800"></div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">ระดับความชำนาญ</span>
+                        <span id="final-rank" class="text-xl font-bold text-cyan-300 font-orbitron">Space Maestro</span>
+                    </div>
+                </div>
+
+                <!-- 10 Questions Detailed Answer Key List -->
+                <div class="w-full text-left bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-6">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 font-orbitron flex justify-between items-center">
+                        <span>สรุปผลการตอบทั้ง 10 ข้อ:</span>
+                        <span class="text-cyan-400 font-normal">ข้อถูกต้อง / ทั้งหมด</span>
+                    </h3>
+                    <div id="final-questions-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        <!-- Generated list of 10 questions and scores -->
+                    </div>
+                </div>
+
+                <button onclick="restartGame()" class="w-full py-4 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-black text-lg rounded-2xl shadow-xl glow-cyan transition transform active:scale-95">
+                    เล่นอีกครั้ง (Restart)
+                </button>
+            </div>
+        </div>
+
+        <!-- THEORY / HELP MODAL -->
+        <div id="theory-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl p-6 max-w-xl w-full shadow-2xl relative text-left">
+                <button onclick="closeTheoryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <h2 class="text-2xl font-bold text-indigo-300 font-orbitron mb-4 flex items-center gap-2">
+                    <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <span>คู่มือค่าโน้ตและจังหวะ (4/4)</span>
+                </h2>
+                
+                <div class="space-y-3 text-sm text-slate-300 max-h-[60vh] overflow-y-auto pr-2">
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center gap-4">
+                        <span class="text-3xl text-cyan-400 font-bold">𝅝</span>
+                        <div>
+                            <strong class="text-cyan-300 block">โน้ตตัวตัวเต็ม (Whole Note)</strong>
+                            <span class="text-xs text-slate-400">มีค่าเท่ากับ 4 จังหวะ (กดค้างลากยาวเต็ม 1 ห้อง)</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center gap-4">
+                        <span class="text-3xl text-cyan-400 font-bold">𝅗𝅥</span>
+                        <div>
+                            <strong class="text-cyan-300 block">โน้ตตัวตัวครึ่ง (Half Note)</strong>
+                            <span class="text-xs text-slate-400">มีค่าเท่ากับ 2 จังหวะ (ใน 1 ห้องมีได้ 2 ตัว)</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center gap-4">
+                        <span class="text-3xl text-cyan-400 font-bold">𝅘𝅥</span>
+                        <div>
+                            <strong class="text-cyan-300 block">โน้ตตัวดำ (Quarter Note)</strong>
+                            <span class="text-xs text-slate-400">มีค่าเท่ากับ 1 จังหวะ (ตรงตามเสียงเคาะเมโทรนอม)</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center gap-4">
+                        <span class="text-3xl text-cyan-400 font-bold">𝅘𝅥𝅮</span>
+                        <div>
+                            <strong class="text-cyan-300 block">โน้ตตัวเบ็ด 1 ชั้น (Eighth Note)</strong>
+                            <span class="text-xs text-slate-400">มีค่าเท่ากับ 1/2 (ครึ่ง) จังหวะ (กดเร็วเป็นสองเท่าของจังหวะหลัก)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="closeTheoryModal()" class="w-full mt-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition">
+                    เข้าใจแล้ว ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 10 UNIQUE RHYTHM QUESTIONS IN 4/4 TIME SIGNATURE
+        // Beats in 4/4 measure range from 0.0 to 4.0
+        const QUESTIONS = [
+            {
+                id: 1,
+                title: "ข้อที่ 1: โน้ตตัวดำ 4 ตัว (Quarter Notes)",
+                desc: "จังหวะพื้นฐาน 1, 2, 3, 4 (เคาะตรงจังหวะละ 1 ตัว)",
+                notes: [
+                    { id: 0, beat: 0, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 1)' },
+                    { id: 1, beat: 1, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 2)' },
+                    { id: 2, beat: 2, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 3)' },
+                    { id: 3, beat: 3, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 4)' }
+                ]
+            },
+            {
+                id: 2,
+                title: "ข้อที่ 2: โน้ตตัวครึ่ง 2 ตัว (Half Notes)",
+                desc: "โน้ตแต่ละตัวมีค่า 2 จังหวะ (เคาะที่จังหวะ 1 และ 3)",
+                notes: [
+                    { id: 0, beat: 0, type: 'half', name: 'โน้ตตัวครึ่ง (จังหวะ 1)' },
+                    { id: 1, beat: 2, type: 'half', name: 'โน้ตตัวครึ่ง (จังหวะ 3)' }
+                ]
+            },
+            {
+                id: 3,
+                title: "ข้อที่ 3: โน้ตตัวครึ่ง + โน้ตตัวดำ 2 ตัว",
+                desc: "เคาะจังหวะ 1 (ยาว 2 จังหวะ) ตามด้วยจังหวะ 3 และ 4",
+                notes: [
+                    { id: 0, beat: 0, type: 'half', name: 'โน้ตตัวครึ่ง (จังหวะ 1)' },
+                    { id: 1, beat: 2, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 3)' },
+                    { id: 2, beat: 3, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 4)' }
+                ]
+            },
+            {
+                id: 4,
+                title: "ข้อที่ 4: โน้ตตัวดำ 2 ตัว + โน้ตตัวครึ่ง",
+                desc: "เคาะจังหวะ 1, 2 และจังหวะ 3 (ยาวลากถึงจังหวะ 4)",
+                notes: [
+                    { id: 0, beat: 0, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 1)' },
+                    { id: 1, beat: 1, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 2)' },
+                    { id: 2, beat: 2, type: 'half', name: 'โน้ตตัวครึ่ง (จังหวะ 3)' }
+                ]
+            },
+            {
+                id: 5,
+                title: "ข้อที่ 5: โน้ตตัวเต็ม 1 ตัว (Whole Note)",
+                desc: "เคาะเฉพาะจังหวะแรก 1 ครั้ง ลากยาวเต็มห้อง 4 จังหวะ",
+                notes: [
+                    { id: 0, beat: 0, type: 'whole', name: 'โน้ตตัวเต็ม (จังหวะ 1)' }
+                ]
+            },
+            {
+                id: 6,
+                title: "ข้อที่ 6: โน้ตตัวเบ็ด 1 ชั้น 8 ตัว (Eighth Notes)",
+                desc: "จังหวะย่อยครึ่งจังหวะ (1-และ-2-และ-3-และ-4-และ)",
+                notes: [
+                    { id: 0, beat: 0.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 1)' },
+                    { id: 1, beat: 0.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 1-และ)' },
+                    { id: 2, beat: 1.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 2)' },
+                    { id: 3, beat: 1.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 2-และ)' },
+                    { id: 4, beat: 2.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 3)' },
+                    { id: 5, beat: 2.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 3-และ)' },
+                    { id: 6, beat: 3.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 4)' },
+                    { id: 7, beat: 3.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 4-และ)' }
+                ]
+            },
+            {
+                id: 7,
+                title: "ข้อที่ 7: ตัวเบ็ดคู่แรก + โน้ตตัวดำ 3 ตัว",
+                desc: "เคาะรัวจังหวะ 1 (1-และ) แล้วเคาะจังหวะ 2, 3, 4",
+                notes: [
+                    { id: 0, beat: 0.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 1)' },
+                    { id: 1, beat: 0.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 1-และ)' },
+                    { id: 2, beat: 1.0, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 2)' },
+                    { id: 3, beat: 2.0, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 3)' },
+                    { id: 4, beat: 3.0, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 4)' }
+                ]
+            },
+            {
+                id: 8,
+                title: "ข้อที่ 8: โน้ตตัวดำ 2 ตัว + ตัวเบ็ด 4 ตัว",
+                desc: "เคาะจังหวะ 1, 2 แล้วรัวจังหวะ 3, 4 (3-และ-4-และ)",
+                notes: [
+                    { id: 0, beat: 0.0, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 1)' },
+                    { id: 1, beat: 1.0, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 2)' },
+                    { id: 2, beat: 2.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 3)' },
+                    { id: 3, beat: 2.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 3-และ)' },
+                    { id: 4, beat: 3.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 4)' },
+                    { id: 5, beat: 3.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 4-และ)' }
+                ]
+            },
+            {
+                id: 9,
+                title: "ข้อที่ 9: ตัวเบ็ด 4 ตัว + โน้ตตัวครึ่ง",
+                desc: "เคาะรัวจังหวะ 1, 2 (1-และ-2-และ) แล้วตามด้วยโน้ตตัวครึ่งยาวจังหวะ 3",
+                notes: [
+                    { id: 0, beat: 0.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 1)' },
+                    { id: 1, beat: 0.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 1-และ)' },
+                    { id: 2, beat: 1.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 2)' },
+                    { id: 3, beat: 1.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 2-และ)' },
+                    { id: 4, beat: 2.0, type: 'half', name: 'โน้ตตัวครึ่ง (จังหวะ 3)' }
+                ]
+            },
+            {
+                id: 10,
+                title: "ข้อที่ 10: จังหวะผสมขั้นสูง (Mixed Syncopation)",
+                desc: "โน้ตตัวดำ, ตัวเบ็ดคู่, และโน้ตตัวครึ่ง (1, 2-และ, 3)",
+                notes: [
+                    { id: 0, beat: 0.0, type: 'quarter', name: 'โน้ตตัวดำ (จังหวะ 1)' },
+                    { id: 1, beat: 1.0, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 2)' },
+                    { id: 2, beat: 1.5, type: 'eighth', name: 'ตัวเบ็ด (จังหวะ 2-และ)' },
+                    { id: 3, beat: 2.0, type: 'half', name: 'โน้ตตัวครึ่ง (จังหวะ 3)' }
+                ]
+            }
+        ];
+
+        // GAME STATE VARIABLES
+        let currentQuestionIdx = 0;
+        let totalScore = 0;
+        let questionResults = []; // Stores hit result for each question
+        const BPM = 70; // Beats per minute
+        const BEAT_DURATION = 60 / BPM; // ~0.857 seconds per beat
+        const TOTAL_BEATS = 4; // 4/4 time signature
+        const HIT_TOLERANCE = 0.28; // Hit accuracy window in beats (+/- 0.28 beat for smooth rhythm response)
+
+        let gameState = 'IDLE'; // IDLE, COUNTDOWN, PLAYING, REVIEW, END
+        let audioCtx = null;
+        let roundStartTime = 0;
+        let animationFrameId = null;
+        let currentQuestionNoteStates = []; // Track hit status of current question notes
+        let metronomeBeatTracker = -1;
+
+        // WEB AUDIO SYNTHESIZER
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Play Metronome Tick Sound
+        function playMetronomeSound(isAccent = false) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(isAccent ? 1200 : 800, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.08);
+
+            // Visual Metronome pulse light
+            const light = document.getElementById('metronome-light');
+            if (light) {
+                light.className = "w-4 h-4 rounded-full bg-cyan-400 border border-white glow-cyan transition-all duration-100 scale-125";
+                setTimeout(() => {
+                    light.className = "w-4 h-4 rounded-full bg-slate-700 border border-slate-500 transition-all duration-200";
+                }, 100);
+            }
+        }
+
+        // Play Hit / Spacebar Sound
+        function playHitSound(isSuccess = true) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = isSuccess ? 'triangle' : 'sawtooth';
+            osc.frequency.setValueAtTime(isSuccess ? 523.25 : 180, audioCtx.currentTime); // C5 or low miss
+            if (isSuccess) {
+                osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+            }
+            
+            gain.gain.setValueAtTime(isSuccess ? 0.35 : 0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // GENERATE STARS BACKGROUND
+        function initStars() {
+            const bg = document.getElementById('stars-bg');
+            bg.innerHTML = '';
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = `${Math.random() * 3 + 1}px`;
+                star.style.height = star.style.width;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.animationDelay = `${Math.random() * 4}s`;
+                bg.appendChild(star);
+            }
+        }
+
+        // RENDER NOTES ON STAFF
+        function renderNotes() {
+            const q = QUESTIONS[currentQuestionIdx];
+            const notesLayer = document.getElementById('notes-layer');
+            notesLayer.innerHTML = '';
+
+            // Reset current note states
+            currentQuestionNoteStates = q.notes.map(n => ({
+                ...n,
+                status: 'PENDING' // PENDING, HIT, MISSED
+            }));
+
+            q.notes.forEach((note) => {
+                const leftPercent = (note.beat / TOTAL_BEATS) * 100;
+                
+                const noteEl = document.createElement('div');
+                noteEl.id = `note-element-${note.id}`;
+                noteEl.className = 'absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center transition-transform duration-100';
+                noteEl.style.left = `${leftPercent}%`;
+
+                // Render note SVG based on type
+                let noteSvg = '';
+                if (note.type === 'whole') {
+                    noteSvg = `<svg class="w-8 h-8 text-cyan-300" viewBox="0 0 32 32"><ellipse cx="16" cy="16" rx="8" ry="5" fill="none" stroke="currentColor" stroke-width="3" transform="rotate(-20 16 16)"/></svg>`;
+                } else if (note.type === 'half') {
+                    noteSvg = `<svg class="w-8 h-12 text-cyan-300" viewBox="0 0 32 48"><ellipse cx="12" cy="34" rx="7" ry="4.5" fill="none" stroke="currentColor" stroke-width="3" transform="rotate(-20 12 34)"/><line x1="18" y1="32" x2="18" y2="6" stroke="currentColor" stroke-width="3"/></svg>`;
+                } else if (note.type === 'quarter') {
+                    noteSvg = `<svg class="w-8 h-12 text-cyan-300" viewBox="0 0 32 48"><ellipse cx="12" cy="34" rx="7" ry="4.5" fill="currentColor" transform="rotate(-20 12 34)"/><line x1="18" y1="32" x2="18" y2="6" stroke="currentColor" stroke-width="3"/></svg>`;
+                } else if (note.type === 'eighth') {
+                    noteSvg = `<svg class="w-8 h-12 text-cyan-300" viewBox="0 0 32 48"><ellipse cx="12" cy="34" rx="7" ry="4.5" fill="currentColor" transform="rotate(-20 12 34)"/><line x1="18" y1="32" x2="18" y2="6" stroke="currentColor" stroke-width="3"/><path d="M18 6 Q26 12 26 20" stroke="currentColor" stroke-width="3" fill="none"/></svg>`;
+                }
+
+                noteEl.innerHTML = `
+                    <div class="note-icon-wrap">${noteSvg}</div>
+                    <span class="text-[10px] font-orbitron text-slate-400 mt-1 whitespace-nowrap">${note.beat + 1}</span>
+                `;
+                notesLayer.appendChild(noteEl);
+            });
+        }
+
+        // LOAD QUESTION / SETUP LEVEL
+        function setupLevel() {
+            const q = QUESTIONS[currentQuestionIdx];
+            document.getElementById('level-display').innerText = `${q.id} / 10`;
+            document.getElementById('q-title').innerText = q.title;
+            document.getElementById('q-desc').innerText = q.desc;
+            document.getElementById('game-status-text').innerText = 'กดปุ่ม "เริ่มเล่น" เพื่อเริ่มนับจังหวะ';
+            
+            // Reset Astronaut Cursor Position with lead-in offset
+            const astro = document.getElementById('astronaut-cursor');
+            const staffWidth = getStaffWidth();
+            astro.style.transform = `translate(${-0.25 * staffWidth}px, -50%)`;
+            
+            // Countdown overlay visibility
+            const overlay = document.getElementById('countdown-overlay');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('count-number').innerText = 'พร้อม!';
+            document.getElementById('count-subtitle').innerText = 'ฟังจังหวะเมโทรนอมนำ 4 จังหวะ (1-2-3-4) แล้วเคาะโน้ตตัวแรก!';
+
+            // Buttons
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('start-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('space-tap-btn').disabled = true;
+            document.getElementById('space-tap-btn').classList.add('opacity-50', 'cursor-not-allowed');
+
+            renderNotes();
+        }
+
+        // START LEVEL (COUNT-IN PHASE & LEAD-IN RUNNER)
+        function startLevel() {
+            initAudio();
+            gameState = 'COUNTDOWN';
+            
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('start-btn').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('game-status-text').innerText = 'กำลังนับจังหวะนำ... (1.. 2.. 3.. 4..)';
+
+            const countNum = document.getElementById('count-number');
+            const countSub = document.getElementById('count-subtitle');
+            
+            let countStep = 1;
+
+            // Immediate First Count Beat (Count 1)
+            playMetronomeSound(true);
+            countNum.innerText = "1";
+            countSub.innerText = "เคาะนับจังหวะ: 1 / 4";
+
+            const countInterval = setInterval(() => {
+                countStep++;
+                if (countStep <= 3) {
+                    playMetronomeSound(false);
+                    countNum.innerText = countStep;
+                    countSub.innerText = `เคาะนับจังหวะ: ${countStep} / 4`;
+                } else if (countStep === 4) {
+                    playMetronomeSound(false);
+                    countNum.innerText = "4";
+                    countSub.innerText = "นักบินอวกาศเริ่มวิ่ง... เตรียมเคาะ!";
+                    clearInterval(countInterval);
+
+                    // Fade overlay out and launch runner with 1-beat pre-roll lead-in (-1.0 beat)
+                    setTimeout(() => {
+                        document.getElementById('countdown-overlay').classList.add('opacity-0', 'pointer-events-none');
+                    }, 150);
+
+                    beginPlayingPhase();
+                }
+            }, BEAT_DURATION * 1000);
+        }
+
+        // BEGIN PLAYING PHASE (ASTRONAUT RUNS ACROSS MEASURE WITH LEAD-IN)
+        function beginPlayingPhase() {
+            gameState = 'PLAYING';
+            roundStartTime = performance.now();
+            metronomeBeatTracker = -1;
+
+            // Enable spacebar button immediately for lead-in tap readiness
+            const tapBtn = document.getElementById('space-tap-btn');
+            tapBtn.disabled = false;
+            tapBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('game-status-text').innerText = '🚀 กด Spacebar เมื่อนักบินอวกาศวิ่งถึงตัวโน้ต!';
+
+            function gameLoop(now) {
+                if (gameState !== 'PLAYING') return;
+
+                const elapsedSeconds = (now - roundStartTime) / 1000;
+                // currentBeat starts at -1.0 (1 beat lead-in) and reaches 0.0 exactly on Beat 1 of measure
+                const currentBeat = -1.0 + (elapsedSeconds / BEAT_DURATION);
+
+                // Play Metronome beat ticks during measure (Beats 1, 2, 3, 4)
+                const beatFloor = Math.floor(currentBeat);
+                if (beatFloor > metronomeBeatTracker && beatFloor < TOTAL_BEATS) {
+                    metronomeBeatTracker = beatFloor;
+                    playMetronomeSound(beatFloor === 0);
+                }
+
+                // Move Astronaut Cursor smoothly along staff
+                const staffWidth = getStaffWidth();
+                const progressRatio = currentBeat / TOTAL_BEATS;
+                const currentX = progressRatio * staffWidth;
+
+                const astro = document.getElementById('astronaut-cursor');
+                astro.style.transform = `translate(${currentX}px, -50%)`;
+
+                // Auto-mark missed notes if astronaut passed beyond hit tolerance
+                currentQuestionNoteStates.forEach(note => {
+                    if (note.status === 'PENDING' && currentBeat > (note.beat + HIT_TOLERANCE)) {
+                        note.status = 'MISSED';
+                        markNoteVisual(note.id, false);
+                    }
+                });
+
+                // End of measure check
+                if (currentBeat >= TOTAL_BEATS + 0.25) {
+                    endPlayingPhase();
+                    return;
+                }
+
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function getStaffWidth() {
+            const container = document.getElementById('notes-layer');
+            return container ? container.clientWidth : 500;
+        }
+
+        // SPACEBAR & TAP INPUT HANDLER
+        function handleTapPress(e) {
+            if (e) e.preventDefault();
+            if (gameState !== 'PLAYING') return;
+
+            initAudio();
+
+            // Trigger button tap animation
+            const tapBtn = document.getElementById('space-tap-btn');
+            tapBtn.classList.add('tap-active');
+            setTimeout(() => tapBtn.classList.remove('tap-active'), 120);
+
+            const elapsedSeconds = (performance.now() - roundStartTime) / 1000;
+            // Calculate current beat including the 1-beat lead-in (-1.0) to strictly sync with game loop
+            const currentBeat = -1.0 + (elapsedSeconds / BEAT_DURATION);
+
+            // Find closest pending note within hit tolerance
+            let closestNote = null;
+            let minDiff = 999;
+
+            currentQuestionNoteStates.forEach(note => {
+                if (note.status === 'PENDING') {
+                    const diff = Math.abs(currentBeat - note.beat);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestNote = note;
+                    }
+                }
+            });
+
+            if (closestNote && minDiff <= HIT_TOLERANCE) {
+                // HIT SUCCESS!
+                closestNote.status = 'HIT';
+                playHitSound(true);
+                markNoteVisual(closestNote.id, true);
+                showFeedbackText("PERFECT!", "#10B981");
+            } else {
+                // MISS / EXTRA PRESS
+                playHitSound(false);
+                showFeedbackText("MISS!", "#EF4444");
+            }
+        }
+
+        // KEYBOARD EVENT LISTENERS
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleTapPress(null);
+            }
+        });
+
+        // MARK NOTE VISUAL FEEDBACK
+        function markNoteVisual(noteId, isHit) {
+            const el = document.getElementById(`note-element-${noteId}`);
+            if (!el) return;
+            if (isHit) {
+                el.classList.add('hit-correct');
+                el.querySelector('.note-icon-wrap').innerHTML += `<span class="text-xs font-bold text-emerald-400 block text-center">✓</span>`;
+            } else {
+                el.classList.add('hit-miss');
+                el.querySelector('.note-icon-wrap').innerHTML += `<span class="text-xs font-bold text-rose-500 block text-center">✗</span>`;
+            }
+        }
+
+        // SHOW FEEDBACK FLOATING TEXT
+        function showFeedbackText(text, colorHex) {
+            const fb = document.getElementById('hit-feedback-text');
+            fb.innerText = text;
+            fb.style.color = colorHex;
+            fb.classList.remove('opacity-0', '-translate-y-2');
+            fb.classList.add('opacity-100', '-translate-y-4');
+
+            setTimeout(() => {
+                fb.classList.remove('opacity-100', '-translate-y-4');
+                fb.classList.add('opacity-0', '-translate-y-2');
+            }, 300);
+        }
+
+        // END PLAYING PHASE & SHOW ROUND REVIEW
+        function endPlayingPhase() {
+            gameState = 'REVIEW';
+            cancelAnimationFrame(animationFrameId);
+
+            // Mark any unhit notes as missed
+            currentQuestionNoteStates.forEach(note => {
+                if (note.status === 'PENDING') {
+                    note.status = 'MISSED';
+                    markNoteVisual(note.id, false);
+                }
+            });
+
+            // Calculate Round Score
+            const correctCount = currentQuestionNoteStates.filter(n => n.status === 'HIT').length;
+            const totalNotes = currentQuestionNoteStates.length;
+            const roundPoints = correctCount * 100;
+            totalScore += roundPoints;
+
+            // Save question outcome
+            questionResults[currentQuestionIdx] = {
+                qTitle: QUESTIONS[currentQuestionIdx].title,
+                correctCount,
+                totalNotes,
+                points: roundPoints,
+                notesDetail: [...currentQuestionNoteStates]
+            };
+
+            // Update UI Scoreboard
+            document.getElementById('total-score-display').innerText = totalScore;
+
+            // Display Round Summary Modal
+            setTimeout(() => {
+                showRoundSummaryModal(correctCount, totalNotes, roundPoints);
+            }, 500);
+        }
+
+        // SHOW ROUND SUMMARY MODAL
+        function showRoundSummaryModal(correctCount, totalNotes, roundPoints) {
+            document.getElementById('round-result-title').innerText = `สรุปผลข้อที่ ${currentQuestionIdx + 1}`;
+            document.getElementById('round-score-text').innerHTML = `คุณกดได้ <span class="text-amber-400 font-bold font-orbitron">${correctCount} / ${totalNotes}</span> โน้ต (+${roundPoints} คะแนน)`;
+
+            const breakdown = document.getElementById('round-notes-breakdown');
+            breakdown.innerHTML = '';
+
+            currentQuestionNoteStates.forEach(n => {
+                const item = document.createElement('div');
+                item.className = `p-2 rounded-xl border text-xs flex justify-between items-center ${
+                    n.status === 'HIT' ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                }`;
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold">${n.status === 'HIT' ? '✓ ถูกต้อง' : '✗ ผิด/ข้าม'}</span>
+                        <span>${n.name}</span>
+                    </div>
+                    <span class="font-orbitron opacity-80">จังหวะที่ ${n.beat + 1}</span>
+                `;
+                breakdown.appendChild(item);
+            });
+
+            document.getElementById('round-summary-modal').classList.remove('hidden');
+        }
+
+        // NEXT LEVEL / ADVANCE
+        function nextLevel() {
+            document.getElementById('round-summary-modal').classList.add('hidden');
+            
+            if (currentQuestionIdx < QUESTIONS.length - 1) {
+                currentQuestionIdx++;
+                setupLevel();
+            } else {
+                showFinalSummaryModal();
+            }
+        }
+
+        // SHOW FINAL GAME OVER SUMMARY MODAL
+        function showFinalSummaryModal() {
+            gameState = 'END';
+            document.getElementById('final-score').innerText = totalScore;
+
+            // Rank calculation
+            let rank = 'Space Maestro 🌟';
+            if (totalScore < 1500) rank = 'Cosmic Rookie 🚀';
+            else if (totalScore < 2800) rank = 'Rhythm Navigator 🛸';
+            else if (totalScore < 3600) rank = 'Star Cadet 🌌';
+            document.getElementById('final-rank').innerText = rank;
+
+            const qList = document.getElementById('final-questions-list');
+            qList.innerHTML = '';
+
+            questionResults.forEach((res, i) => {
+                const item = document.createElement('div');
+                item.className = "p-2.5 bg-slate-900 rounded-xl border border-slate-800 text-xs flex justify-between items-center";
+                item.innerHTML = `
+                    <div>
+                        <strong class="text-cyan-300 block">${res.qTitle}</strong>
+                        <span class="text-slate-400">กดถูก ${res.correctCount} จาก ${res.totalNotes} โน้ต</span>
+                    </div>
+                    <span class="font-orbitron font-bold text-amber-400">+${res.points}</span>
+                `;
+                qList.appendChild(item);
+            });
+
+            document.getElementById('final-summary-modal').classList.remove('hidden');
+        }
+
+        // RESTART GAME
+        function restartGame() {
+            currentQuestionIdx = 0;
+            totalScore = 0;
+            questionResults = [];
+            document.getElementById('total-score-display').innerText = '0';
+            document.getElementById('final-summary-modal').classList.add('hidden');
+            setupLevel();
+        }
+
+        // THEORY MODAL TOGGLES
+        function openTheoryModal() {
+            document.getElementById('theory-modal').classList.remove('hidden');
+        }
+        function closeTheoryModal() {
+            document.getElementById('theory-modal').classList.add('hidden');
+        }
+
+        // INITIALIZE APPLICATION
+        window.onload = function() {
+            initStars();
+            setupLevel();
+        };
+    </script>
+</body>
+</html>

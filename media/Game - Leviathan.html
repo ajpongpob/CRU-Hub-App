@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fantasy Rhythm 4/4 - Master Edition</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0b0726 0%, #1a1040 50%, #2f1b69 100%);
+      --gold: #ffd700;
+      --neon-cyan: #00f0ff;
+      --panel-bg: rgba(20, 15, 45, 0.95);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg-gradient);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #game-wrapper {
+      width: 100%;
+      max-width: 820px;
+      height: 650px;
+      background: var(--panel-bg);
+      border: 3px solid #7c3aed;
+      box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: rgba(10, 5, 25, 0.95);
+      border-bottom: 2px solid #553c9a;
+      z-index: 10;
+    }
+
+    .stat-badge {
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--gold);
+    }
+
+    .screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      position: relative;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .title {
+      font-size: 2.2rem;
+      color: var(--gold);
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+      text-align: center;
+      margin: 0 0 10px 0;
+    }
+
+    .sub-title {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+      text-align: center;
+      max-width: 580px;
+      line-height: 1.4;
+    }
+
+    .guide-box {
+      background: rgba(45, 27, 105, 0.6);
+      border: 1px solid #7c3aed;
+      border-radius: 10px;
+      padding: 12px 15px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 25px;
+      width: 90%;
+      max-width: 600px;
+    }
+
+    .guide-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .note-icon-svg {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .control-hint {
+      position: absolute;
+      bottom: 12px;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    .control-btn {
+      background: rgba(124, 58, 237, 0.7);
+      border: 2px solid var(--neon-cyan);
+      color: #fff;
+      font-size: 1.3rem;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .staff-container {
+      width: 95%;
+      max-width: 700px;
+      background: rgba(13, 8, 38, 0.95);
+      border: 2px solid var(--neon-cyan);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .measure-box {
+      display: flex;
+      align-items: center;
+      min-height: 80px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px dashed #9333ea;
+      border-radius: 8px;
+      padding: 6px 12px;
+      gap: 8px;
+    }
+
+    .time-signature {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--gold);
+      border-right: 3px solid #fff;
+      padding-right: 12px;
+      margin-right: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0.9;
+    }
+
+    .placed-notes, .inventory-notes {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      flex: 1;
+    }
+
+    .inventory-section {
+      width: 95%;
+      max-width: 700px;
+    }
+
+    .inventory-notes {
+      min-height: 70px;
+      max-height: 120px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.3);
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #4c1d95;
+    }
+
+    .note-card {
+      background: linear-gradient(145deg, #3b0764, #1e1b4b);
+      border: 2px solid #a855f7;
+      border-radius: 8px;
+      padding: 4px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .note-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+    }
+
+    .note-card .val {
+      font-size: 0.75rem;
+      color: var(--neon-cyan);
+      margin-top: 2px;
+      font-weight: bold;
+    }
+
+    .btn {
+      background: linear-gradient(45deg, #7c3aed, #db2777);
+      border: 2px solid var(--gold);
+      padding: 10px 24px;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(219, 39, 119, 0.4);
+    }
+
+    .btn-sec {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid #ccc;
+    }
+
+    .status-exact { color: #4ade80; }
+    .status-over { color: #f87171; }
+    .status-under { color: var(--gold); }
+
+    .target-badge {
+      background: #4c1d95;
+      padding: 4px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-wrapper">
+    <div class="header-bar">
+      <div class="stat-badge">&#127984; &#3604;&#3656;&#3634;&#3609;: <span id="ui-level">1</span>/3</div>
+      <div class="stat-badge">&#11088; &#3588;&#3632;&#3649;&#3609;&#3609;: <span id="ui-score">0</span></div>
+      <div class="stat-badge">&#127925; &#3626;&#3606;&#3634;&#3609;&#3632;: <span id="ui-mode">&#3648;&#3605;&#3619;&#3637;&#3618;&#3617;&#3614;&#3619;&#3657;&#3629;&#3617;</span></div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="screen-start" class="screen active">
+      <h1 class="title">RHYTHM OF VALOR</h1>
+      <p class="sub-title">
+        วิ่งเก็บโน้ต หลบลูกไฟปีศาจ แล้วนำมาสร้างห้องเพลง <b>4/4</b> ให้ผ่านครบตามเป้าหมาย!
+      </p>
+
+      <div class="guide-box">
+        <div class="guide-item">
+          <div class="note-icon-svg" id="g-whole"></div>
+          <b>โน้ตตัวกลม</b>
+          <span style="color:var(--gold);">4 จังหวะ</span>
+        </div>
+        <div class="guide-item">
+          <div class="note-icon-svg" id="g-half"></div>
+          <b>โน้ตตัวขาว</b>
+          <span style="color:var(--gold);">2 จังหวะ</span>
+        </div>
+        <div class="guide-item">
+          <div class="note-icon-svg" id="g-quarter"></div>
+          <b>โน้ตตัวดำ</b>
+          <span style="color:var(--gold);">1 จังหวะ</span>
+        </div>
+        <div class="guide-item">
+          <div class="note-icon-svg" id="g-eighth"></div>
+          <b>เขบ็จ 1 ชั้น</b>
+          <span style="color:var(--gold);">0.5 จังหวะ</span>
+        </div>
+      </div>
+
+      <button class="btn" onclick="startGame()">เริ่มการผจญภัย &#9876;</button>
+    </div>
+
+    <!-- Runner Stage -->
+    <div id="screen-runner" class="screen" style="padding:0;">
+      <div id="canvas-container">
+        <canvas id="runnerCanvas"></canvas>
+      </div>
+      <div class="control-hint">
+        <button class="control-btn" onpointerdown="moveLane(-1)">&#9664;</button>
+        <span style="font-size:0.9rem; color:#cbd5e1;">กดลูกศร &#9664; &#9654; หรือ A/D เพื่อเปลี่ยนเลน</span>
+        <button class="control-btn" onpointerdown="moveLane(1)">&#9654;</button>
+      </div>
+    </div>
+
+    <!-- Puzzle Stage -->
+    <div id="screen-puzzle" class="screen">
+      <div class="target-badge" id="measure-goal-text">ห้องเพลงที่ 1 จาก 1</div>
+      <h2 style="margin:0 0 6px 0; color:var(--gold); font-size:1.3rem;">รวมพลังจังหวะ 4/4</h2>
+      <p style="margin:0 0 10px 0; font-size:0.85rem; color:#cbd5e1;">คลิกโน้ตเพื่อนำไปใส่ในห้องเพลงให้ได้ครบ 4 จังหวะพอดี</p>
+
+      <div class="staff-container">
+        <div class="measure-box">
+          <div class="time-signature"><span>4</span><span>4</span></div>
+          <div class="placed-notes" id="measure-slots"></div>
+        </div>
+        <div id="meter-status" style="margin-top:8px; font-weight:bold; font-size:0.95rem;">จังหวะรวม: 0 / 4</div>
+      </div>
+
+      <div class="inventory-section">
+        <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:4px;">โน้ตในกระเป๋าของคุณ:</div>
+        <div class="inventory-notes" id="inventory-slots"></div>
+      </div>
+
+      <div style="display:flex; gap:12px; margin-top:14px;">
+        <button class="btn btn-sec" onclick="clearMeasure()">ล้างห้องนี้</button>
+        <button class="btn" id="btn-submit" onclick="verifyMeasure()">ส่งห้องเพลง 4/4</button>
+      </div>
+    </div>
+
+    <!-- End Screen -->
+    <div id="screen-end" class="screen">
+      <h1 class="title">ชัยชนะแห่งอัศวินดนตรี!</h1>
+      <p class="sub-title">คุณผ่านบททดสอบอันเข้มข้นครบทั้ง 3 ด่านเรียบร้อยแล้ว</p>
+      <div style="font-size:1.8rem; color:var(--gold); margin-bottom:20px;">
+        คะแนนรวมสุดท้าย: <span id="final-score">0</span> คะแนน
+      </div>
+      <button class="btn" onclick="restartGame()">เริ่มใหม่อีกครั้ง</button>
+    </div>
+  </div>
+
+  <script>
+    const SVG_NOTES = {
+      whole: '<svg viewBox="0 0 40 40" width="30" height="30"><ellipse cx="20" cy="20" rx="11" ry="6.5" fill="none" stroke="#ffd700" stroke-width="4" transform="rotate(-20 20 20)"/></svg>',
+      half: '<svg viewBox="0 0 40 40" width="30" height="30"><ellipse cx="14" cy="25" rx="8" ry="5" fill="none" stroke="#38bdf8" stroke-width="3" transform="rotate(-20 14 25)"/><line x1="21" y1="23" x2="21" y2="8" stroke="#38bdf8" stroke-width="3"/></svg>',
+      quarter: '<svg viewBox="0 0 40 40" width="30" height="30"><ellipse cx="14" cy="25" rx="7.5" ry="5" fill="#c084fc" transform="rotate(-20 14 25)"/><line x1="20" y1="23" x2="20" y2="8" stroke="#c084fc" stroke-width="3"/></svg>',
+      eighth: '<svg viewBox="0 0 40 40" width="30" height="30"><ellipse cx="13" cy="25" rx="6.5" ry="4.5" fill="#4ade80" transform="rotate(-20 13 25)"/><line x1="18.5" y1="23" x2="18.5" y2="8" stroke="#4ade80" stroke-width="3"/><path d="M18.5 8 C24 10 26 15 26 18" fill="none" stroke="#4ade80" stroke-width="3"/></svg>'
+    };
+
+    const NOTE_TYPES = [
+      { id: 'whole', name: 'โน้ตตัวกลม', beats: 4, svg: SVG_NOTES.whole, color: '#ffd700' },
+      { id: 'half', name: 'โน้ตตัวขาว', beats: 2, svg: SVG_NOTES.half, color: '#38bdf8' },
+      { id: 'quarter', name: 'โน้ตตัวดำ', beats: 1, svg: SVG_NOTES.quarter, color: '#c084fc' },
+      { id: 'eighth', name: 'เขบ็จ 1 ชั้น', beats: 0.5, svg: SVG_NOTES.eighth, color: '#4ade80' }
+    ];
+
+    let currentLevel = 1;
+    let score = 0;
+    let collectedNotes = [];
+    let placedNotes = [];
+    let audioCtx = null;
+    let lastNow = 0;
+
+    const REQUIRED_MEASURES = { 1: 1, 2: 2, 3: 3 };
+    let currentMeasureIndex = 1;
+
+    function renderGuideNotes() {
+      document.getElementById('g-whole').innerHTML = SVG_NOTES.whole;
+      document.getElementById('g-half').innerHTML = SVG_NOTES.half;
+      document.getElementById('g-quarter').innerHTML = SVG_NOTES.quarter;
+      document.getElementById('g-eighth').innerHTML = SVG_NOTES.eighth;
+    }
+
+    function initAudio() {
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch (e) {}
+    }
+
+    function playTone(freq, dur = 0.12, type = 'sine') {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+      } catch(e) {}
+    }
+
+    function switchScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(id);
+      if (target) target.classList.add('active');
+    }
+
+    const canvas = document.getElementById('runnerCanvas');
+    const ctx = canvas.getContext('2d');
+    let runnerId = null;
+    let lane = 1;
+    let entities = [];
+    let spawnTimer = 0;
+    let timeLeft = 15;
+    let timerInt = null;
+
+    function resize() {
+      const container = document.getElementById('canvas-container');
+      canvas.width = container.clientWidth || 750;
+      canvas.height = container.clientHeight || 500;
+    }
+
+    function startRunner() {
+      switchScreen('screen-runner');
+      document.getElementById('ui-mode').innerText = "วิ่งเก็บโน้ต!";
+      resize();
+
+      collectedNotes = [];
+      entities = [];
+      spawnTimer = 0;
+      lane = 1;
+      timeLeft = 12 + currentLevel * 4;
+
+      clearInterval(timerInt);
+      timerInt = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) stopRunner();
+      }, 1000);
+
+      lastNow = performance.now();
+      cancelAnimationFrame(runnerId);
+      runnerId = requestAnimationFrame(loop);
+    }
+
+    function moveLane(d) {
+      lane = Math.max(0, Math.min(2, lane + d));
+      playTone(320, 0.05);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const runnerScreen = document.getElementById('screen-runner');
+      if (runnerScreen && runnerScreen.classList.contains('active')) {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLane(-1);
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveLane(1);
+      }
+    });
+
+    function loop(now) {
+      const dt = (now - lastNow) / 1000;
+      lastNow = now;
+
+      spawnTimer += dt;
+      const spawnThreshold = Math.max(0.45, 0.85 - currentLevel * 0.12);
+      if (spawnTimer >= spawnThreshold) {
+        spawnTimer = 0;
+        const isHazard = (currentLevel >= 2) && (Math.random() < (0.2 + currentLevel * 0.08));
+        if (isHazard) {
+          entities.push({
+            type: 'hazard',
+            lane: Math.floor(Math.random() * 3),
+            y: -40
+          });
+        } else {
+          entities.push({
+            type: 'note',
+            lane: Math.floor(Math.random() * 3),
+            y: -40,
+            data: NOTE_TYPES[Math.floor(Math.random() * NOTE_TYPES.length)]
+          });
+        }
+      }
+
+      const w = canvas.width;
+      const h = canvas.height;
+      const laneW = w / 3;
+      const speed = 280 + currentLevel * 60;
+      const playerY = h - 70;
+
+      ctx.fillStyle = '#110b29';
+      ctx.fillRect(0, 0, w, h);
+
+      for (let i = 0; i < 3; i++) {
+        ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
+        ctx.strokeRect(i * laneW + 8, 0, laneW - 16, h);
+      }
+
+      for (let i = entities.length - 1; i >= 0; i--) {
+        const ent = entities[i];
+        ent.y += speed * dt;
+        const x = ent.lane * laneW + laneW / 2;
+
+        if (ent.y > playerY - 30 && ent.y < playerY + 30 && ent.lane === lane) {
+          if (ent.type === 'note') {
+            collectedNotes.push(ent.data);
+            score += 20;
+            updateStats();
+            playTone(440 + ent.data.beats * 80, 0.12);
+          } else {
+            score = Math.max(0, score - 30);
+            updateStats();
+            playTone(130, 0.25, 'sawtooth');
+          }
+          entities.splice(i, 1);
+          continue;
+        }
+
+        if (ent.y > h + 50) {
+          entities.splice(i, 1);
+          continue;
+        }
+
+        if (ent.type === 'note') {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(x, ent.y, 25, 0, Math.PI * 2);
+          ctx.fillStyle = '#1e1145';
+          ctx.fill();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = ent.data.color;
+          ctx.stroke();
+
+          drawNoteShape(ctx, x, ent.y, ent.data.id, ent.data.color);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(ent.data.beats + ' Beats', x, ent.y + 36);
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(x, ent.y, 18, 0, Math.PI * 2);
+          ctx.fillStyle = '#ef4444';
+          ctx.shadowColor = '#f97316';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('X', x, ent.y);
+          ctx.restore();
+        }
+      }
+
+      const px = lane * laneW + laneW / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, playerY, 24, 0, Math.PI * 2);
+      ctx.fillStyle = '#00f0ff';
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 15;
+      ctx.fill();
+
+      ctx.fillStyle = '#0b0726';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('HERO', px, playerY);
+      ctx.restore();
+
+      ctx.fillStyle = '#ffd700';
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`Time: ${timeLeft}s`, 15, 28);
+      ctx.fillText(`Notes: ${collectedNotes.length}`, 15, 50);
+
+      if (timeLeft > 0) {
+        runnerId = requestAnimationFrame(loop);
+      }
+    }
+
+    function drawNoteShape(c, x, y, type, color) {
+      c.save();
+      c.strokeStyle = color;
+      c.fillStyle = color;
+      c.lineWidth = 2.5;
+
+      if (type === 'whole') {
+        c.beginPath();
+        c.ellipse(x, y - 2, 10, 6, -0.3, 0, Math.PI * 2);
+        c.stroke();
+      } else if (type === 'half') {
+        c.beginPath();
+        c.ellipse(x - 4, y + 2, 7, 5, -0.3, 0, Math.PI * 2);
+        c.stroke();
+        c.beginPath();
+        c.moveTo(x + 2, y + 1);
+        c.lineTo(x + 2, y - 13);
+        c.stroke();
+      } else if (type === 'quarter') {
+        c.beginPath();
+        c.ellipse(x - 4, y + 2, 7, 5, -0.3, 0, Math.PI * 2);
+        c.fill();
+        c.beginPath();
+        c.moveTo(x + 2, y + 1);
+        c.lineTo(x + 2, y - 13);
+        c.stroke();
+      } else if (type === 'eighth') {
+        c.beginPath();
+        c.ellipse(x - 4, y + 2, 6, 4.5, -0.3, 0, Math.PI * 2);
+        c.fill();
+        c.beginPath();
+        c.moveTo(x + 1.5, y + 1);
+        c.lineTo(x + 1.5, y - 13);
+        c.stroke();
+        c.beginPath();
+        c.arc(x + 5.5, y - 9, 5, -Math.PI/2, 0.2);
+        c.stroke();
+      }
+      c.restore();
+    }
+
+    function stopRunner() {
+      clearInterval(timerInt);
+      cancelAnimationFrame(runnerId);
+
+      const reqBeats = (REQUIRED_MEASURES[currentLevel] - currentMeasureIndex + 1) * 4;
+      const currentBeats = collectedNotes.reduce((acc, cur) => acc + cur.beats, 0);
+      if (currentBeats < reqBeats) {
+        const diff = reqBeats - currentBeats;
+        for (let b = 0; b < diff; b += 2) {
+          collectedNotes.push(NOTE_TYPES[1]);
+        }
+      }
+
+      currentMeasureIndex = 1;
+      startPuzzle();
+    }
+
+    function startPuzzle() {
+      switchScreen('screen-puzzle');
+      document.getElementById('ui-mode').innerText = "รวมจังหวะ 4/4";
+      placedNotes = [];
+      updateMeasureGoalText();
+      renderPuzzle();
+    }
+
+    function updateMeasureGoalText() {
+      const totalReq = REQUIRED_MEASURES[currentLevel];
+      document.getElementById('measure-goal-text').innerText = `ภารกิจ: ประกอบห้องเพลงที่ ${currentMeasureIndex} จาก ${totalReq} ห้อง`;
+    }
+
+    function renderPuzzle() {
+      const invEl = document.getElementById('inventory-slots');
+      invEl.innerHTML = '';
+      collectedNotes.forEach((n, idx) => {
+        const d = document.createElement('div');
+        d.className = 'note-card';
+        d.innerHTML = `<div>${n.svg}</div><div class="val">${n.beats} จังหวะ</div>`;
+        d.onclick = () => {
+          placedNotes.push(collectedNotes.splice(idx, 1)[0]);
+          playTone(450, 0.08);
+          renderPuzzle();
+        };
+        invEl.appendChild(d);
+      });
+
+      const mEl = document.getElementById('measure-slots');
+      mEl.innerHTML = '';
+      let sum = 0;
+      placedNotes.forEach((n, idx) => {
+        sum += n.beats;
+        const d = document.createElement('div');
+        d.className = 'note-card';
+        d.innerHTML = `<div>${n.svg}</div><div class="val">${n.beats} จังหวะ</div>`;
+        d.onclick = () => {
+          collectedNotes.push(placedNotes.splice(idx, 1)[0]);
+          playTone(350, 0.08);
+          renderPuzzle();
+        };
+        mEl.appendChild(d);
+      });
+
+      const st = document.getElementById('meter-status');
+      st.innerText = `จังหวะรวม: ${sum} / 4 จังหวะ`;
+      st.className = '';
+      if (sum === 4) {
+        st.classList.add('status-exact');
+        st.innerText += " (ครบ 4 จังหวะสมบูรณ์!)";
+      } else if (sum > 4) {
+        st.classList.add('status-over');
+        st.innerText += ` (เกินมา ${sum - 4} จังหวะ)`;
+      } else {
+        st.classList.add('status-under');
+        st.innerText += ` (ยังขาดอีก ${4 - sum} จังหวะ)`;
+      }
+    }
+
+    function clearMeasure() {
+      collectedNotes.push(...placedNotes);
+      placedNotes = [];
+      playTone(250, 0.1);
+      renderPuzzle();
+    }
+
+    function verifyMeasure() {
+      const sum = placedNotes.reduce((a, b) => a + b.beats, 0);
+
+      if (sum !== 4) {
+        playTone(160, 0.25, 'sawtooth');
+        if (sum > 4) {
+          alert(`จังหวะเกิน! ขณะนี้มี ${sum} จังหวะ (ห้องเพลง 4/4 บรรจุได้สูงสุด 4 จังหวะ)`);
+        } else {
+          alert(`จังหวะยังไม่ครบ! ขณะนี้มี ${sum} จังหวะ (ยังขาดอีก ${4 - sum} จังหวะ)`);
+        }
+        return;
+      }
+
+      score += 100 * currentLevel;
+      updateStats();
+      playTone(523, 0.1);
+      setTimeout(() => playTone(659, 0.1), 100);
+      setTimeout(() => playTone(784, 0.2), 200);
+
+      const totalReq = REQUIRED_MEASURES[currentLevel];
+
+      if (currentMeasureIndex < totalReq) {
+        alert(`ห้องเพลงที่ ${currentMeasureIndex} ถูกต้อง! เหลืออีก ${totalReq - currentMeasureIndex} ห้องเพลงในด่านนี้`);
+        currentMeasureIndex++;
+        placedNotes = [];
+        updateMeasureGoalText();
+        renderPuzzle();
+      } else {
+        if (currentLevel < 3) {
+          alert(`ผ่านด่านที่ ${currentLevel} เรียบร้อยแล้ว! เตรียมลุยด่านถัดไป`);
+          currentLevel++;
+          currentMeasureIndex = 1;
+          updateStats();
+          startRunner();
+        } else {
+          showEndScreen();
+        }
+      }
+    }
+
+    function showEndScreen() {
+      switchScreen('screen-end');
+      document.getElementById('ui-mode').innerText = "จบภารกิจ";
+      document.getElementById('final-score').innerText = score;
+    }
+
+    function updateStats() {
+      document.getElementById('ui-level').innerText = currentLevel;
+      document.getElementById('ui-score').innerText = score;
+    }
+
+    function startGame() {
+      initAudio();
+      currentLevel = 1;
+      currentMeasureIndex = 1;
+      score = 0;
+      updateStats();
+      startRunner();
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    // Direct render on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderGuideNotes);
+    } else {
+      renderGuideNotes();
+    }
+  </script>
+</body>
+</html>

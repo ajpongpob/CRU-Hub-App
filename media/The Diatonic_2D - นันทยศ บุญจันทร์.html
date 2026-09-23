@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>เกมสยองขวัญโถงทางเดิน 2D: The Diatonic</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  overflow: hidden;
+  touch-action: none;
+  font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+  -webkit-user-select: none;
+  user-select: none;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.controls-container {
+  position: absolute;
+  bottom: 25px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 35px;
+  box-sizing: border-box;
+  z-index: 10;
+  pointer-events: none;
+}
+.control-btn {
+  pointer-events: auto;
+  width: 85px;
+  height: 85px;
+  background: rgba(30, 20, 15, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.7), inset 0 2px 5px rgba(255,255,255,0.1);
+  transition: background 0.1s, transform 0.1s, border-color 0.1s;
+}
+.control-btn:active, .control-btn.active {
+  background: rgba(80, 50, 35, 0.9);
+  transform: scale(0.92);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.9), inset 0 2px 2px rgba(0,0,0,0.5);
+}
+.arrow-left {
+  width: 0;
+  height: 0;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-right: 24px solid rgba(255, 255, 255, 0.85);
+  margin-right: 3px;
+}
+.arrow-right {
+  width: 0;
+  height: 0;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-left: 24px solid rgba(255, 255, 255, 0.85);
+  margin-left: 3px;
+}
+.scanlines {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  background-size: 100% 3px, 4px 100%;
+  z-index: 5;
+  opacity: 0.7;
+}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div class="scanlines"></div>
+
+<div class="controls-container" id="touchControls">
+  <div class="control-btn" id="btnLeft">
+    <div class="arrow-left"></div>
+  </div>
+  <div class="control-btn" id="btnRight">
+    <div class="arrow-right"></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const majorScales = [
+  "C-D-E-F-G-A-B-C",
+  "G-A-B-C-D-E-F#-G",
+  "F-G-A-Bb-C-D-E-F",
+  "D-E-F#-G-A-B-C#-D",
+  "Bb-C-D-Eb-F-G-A-Bb",
+  "A-B-C#-D-E-F#-G#-A",
+  "Eb-F-G-Ab-Bb-C-D-Eb"
+];
+
+const anomalyScales = [
+  "C-D-E-F#-G-A-B-C",
+  "G-A-Bb-C-D-E-F#-G",
+  "F-G-A-B-C-D-E-F",
+  "Bb-C-D-E-Fb-A-Bb",
+  "A#-B#-C-D#-E#-F-G-A#"
+];
+
+const WORLD_WIDTH = 2800;
+const BOARD_POSITION = 1400;
+const SPAWN_POSITION = 1050;  
+let cameraX = 0;
+let level = 12;
+let isAnomaly = false;
+let currentScaleText = "";
+let gameState = 'START';
+let fadeAlpha = 0;
+let fadeDir = 0;
+let failMessage = "";
+let winMessage = "";
+
+const winMsgs = [
+  "ก็ไม่เท่าไหร่หรอก",
+  "เหมือนเก่งอะ"
+];
+
+let audioCtx;
+let bgmInterval = null;
+let lastStepTime = 0;
+
+const player = {
+  worldX: SPAWN_POSITION,
+  y: 0,
+  width: 225,     
+  height: 315,    
+  speed: 6.5,
+  facing: 'right',
+  isMoving: false,
+  bobOffset: 0
+};
+const keys = { left: false, right: false };
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function startBGM() {
+  if (!audioCtx) return;
+  if (bgmInterval) return;
+  const creepyMajorMelody = [
+    261.63, 329.63, 392.00, 523.25,
+    493.88, 440.00, 392.00, 329.63
+  ];
+  let noteIndex = 0;
+  bgmInterval = setInterval(() => {
+    if (!audioCtx || gameState !== 'PLAYING') return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    const freq = creepyMajorMelody[noteIndex];
+    osc.frequency.setValueAtTime(freq, now);
+    setTimeout(() => {
+      if (osc && audioCtx) {
+        try { osc.frequency.setValueAtTime(freq * 1.04, audioCtx.currentTime); } catch(e){}
+      }
+    }, 150);
+    gain.gain.setValueAtTime(0.035, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.45);
+    noteIndex = (noteIndex + 1) % creepyMajorMelody.length;
+  }, 400);
+}
+
+function stopBGM() {
+  if (bgmInterval) {
+    clearInterval(bgmInterval);
+    bgmInterval = null;
+  }
+}
+
+function playFootstep() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  if (now - lastStepTime < 0.38) return;
+  lastStepTime = now;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(80, now);
+  osc.frequency.exponentialRampToValueAtTime(20, now + 0.1);
+  gain.gain.setValueAtTime(0.18, now);
+  gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + 0.1);
+}
+
+function playGameOverSound() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const failNotes = [220.00, 196.00, 164.81, 130.81];
+  failNotes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    const startTime = now + (i * 0.3);
+    osc.frequency.setValueAtTime(freq, startTime);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.8, startTime + 0.6);
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.08, startTime + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.9);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + 0.9);
+  });
+}
+
+function playVictorySound() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const winNotes = [329.63, 392.00, 523.25, 659.25, 783.99];
+  winNotes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    const startTime = now + (i * 0.15);
+    osc.frequency.setValueAtTime(freq, startTime);
+    gain.gain.setValueAtTime(0.05, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + 0.3);
+  });
+}
+
+function handleInteraction() {
+  initAudio();
+  if (gameState === 'START') {
+    resetLevel();
+    gameState = 'PLAYING';
+    startBGM();
+  } else if (gameState === 'GAME_OVER' || gameState === 'WIN') {
+    level = 12;
+    resetLevel();
+    gameState = 'PLAYING';
+    startBGM();
+  }
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') { keys.left = true; handleInteraction(); }
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') { keys.right = true; handleInteraction(); }
+});
+window.addEventListener('keyup', (e) => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+});
+
+const btnLeft = document.getElementById('btnLeft');
+const btnRight = document.getElementById('btnRight');
+function setupTouchButton(elem, keyName) {
+  elem.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handleInteraction();
+    keys[keyName] = true;
+    elem.classList.add('active');
+  });
+  elem.addEventListener('pointerup', (e) => {
+    e.preventDefault();
+    keys[keyName] = false;
+    elem.classList.remove('active');
+  });
+  elem.addEventListener('pointerleave', (e) => {
+    e.preventDefault();
+    keys[keyName] = false;
+    elem.classList.remove('active');
+  });
+}
+setupTouchButton(btnLeft, 'left');
+setupTouchButton(btnRight, 'right');
+
+window.addEventListener('pointerdown', (e) => {
+  if (e.target.id !== 'btnLeft' && e.target.id !== 'btnRight') {
+    handleInteraction();
+  }
+});
+
+window.addEventListener('resize', resizeCanvas);
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  player.y = canvas.height - 140;
+}
+
+function resetLevel() {
+  isAnomaly = Math.random() < 0.5;
+  if (isAnomaly) {
+    currentScaleText = anomalyScales[Math.floor(Math.random() * anomalyScales.length)];
+  } else {
+    currentScaleText = majorScales[Math.floor(Math.random() * majorScales.length)];
+  }
+  player.worldX = SPAWN_POSITION;
+  player.facing = 'right';
+  keys.left = false;
+  keys.right = false;
+  fadeAlpha = 1;
+  fadeDir = -1;
+}
+
+function triggerFade(nextState, failMsg = "") {
+  if (gameState !== 'PLAYING') return;
+  gameState = nextState;
+  fadeDir = 1;
+  if (failMsg) {
+    failMessage = failMsg;
+    playGameOverSound();
+    stopBGM();
+  }
+}
+
+function drawWallDetails(ctx, startX, endX, isReflection = false) {
+  const wallBaseY = canvas.height - 320;
+  const floorY = canvas.height - 140;
+
+  ctx.fillStyle = '#1e1a14';
+  ctx.fillRect(startX, 0, endX - startX, wallBaseY);
+
+  ctx.fillStyle = '#120a05';
+  ctx.fillRect(startX, wallBaseY, endX - startX, floorY - wallBaseY);
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let x = Math.floor(startX / 50) * 50; x < endX; x += 50) {
+    ctx.moveTo(x, wallBaseY);
+    ctx.lineTo(x, floorY);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = '#0d0703';
+  ctx.fillRect(startX, wallBaseY - 12, endX - startX, 22);
+  ctx.fillRect(startX, floorY - 16, endX - startX, 16);
+
+  const windowWidth = 260;
+  const windowHeight = 200;
+  const windowSpacing = 600;
+  for (let x = Math.floor(startX / windowSpacing) * windowSpacing; x < endX; x += windowSpacing) {
+    ctx.fillStyle = '#0b0603';
+    ctx.fillRect(x + 100, 70, windowWidth, windowHeight);
+    ctx.fillStyle = '#030405';
+    ctx.fillRect(x + 110, 80, windowWidth - 20, windowHeight - 20);
+
+    if (!isReflection) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
+      ctx.beginPath();
+      ctx.moveTo(x + 110, 80);
+      ctx.lineTo(x + 240, 80);
+      ctx.lineTo(x + 110, 230);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#0b0603';
+    ctx.fillRect(x + 100 + windowWidth/2 - 8, 80, 16, windowHeight - 20);
+    ctx.fillRect(x + 110, 80 + windowHeight/2 - 8, windowWidth - 20, 16);
+  }
+}
+
+function drawScene() {
+  ctx.fillStyle = '#030303';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const viewStartX = cameraX;
+  const viewEndX = cameraX + canvas.width;
+
+  ctx.save();
+  ctx.translate(-cameraX, 0);
+
+  drawWallDetails(ctx, viewStartX - 200, viewEndX + 200, false);
+
+  const floorY = canvas.height - 140;
+  ctx.fillStyle = '#070504';
+  ctx.fillRect(viewStartX, floorY, canvas.width, canvas.height - floorY);
+
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.scale(1, -1);
+  ctx.translate(0, -floorY * 2);
+  drawWallDetails(ctx, viewStartX - 200, viewEndX + 200, true);
+  ctx.restore();
+
+  const lampSpacing = 750;
+  for (let x = Math.floor(viewStartX / lampSpacing) * lampSpacing; x < viewEndX + 200; x += lampSpacing) {
+    ctx.fillStyle = '#222';
+    ctx.fillRect(x + 360, 0, 30, 25);
+    ctx.fillStyle = '#fff6cc';
+    ctx.fillRect(x + 365, 25, 20, 10);
+
+    const lampGrad = ctx.createRadialGradient(x + 375, 35, 10, x + 375, 280, 380);
+    lampGrad.addColorStop(0, 'rgba(255, 240, 180, 0.18)');
+    lampGrad.addColorStop(1, 'rgba(255, 240, 180, 0)');
+    ctx.fillStyle = lampGrad;
+    ctx.fillRect(x, 0, 750, canvas.height);
+  }
+
+  const boardX = BOARD_POSITION;
+  const boardY = canvas.height - 540;
+  const boardW = 720;
+  const boardH = 130;
+
+  ctx.fillStyle = '#120904';
+  ctx.fillRect(boardX + 50, boardY + boardH, 18, floorY - (boardY + boardH));
+  ctx.fillRect(boardX + boardW - 68, boardY + boardH, 18, floorY - (boardY + boardH));
+
+  ctx.fillStyle = '#22140b';
+  ctx.fillRect(boardX - 10, boardY - 10, boardW + 20, boardH + 20);
+  ctx.fillStyle = '#07120c';
+  ctx.fillRect(boardX, boardY, boardW, boardH);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+  ctx.font = 'bold 36px "Courier Prime", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(currentScaleText, boardX + boardW / 2, boardY + 80);
+
+  const doorY = canvas.height - 380;
+  const doorW = 150;
+  const doorH = 240;
+
+  ctx.fillStyle = '#140a04';
+  ctx.fillRect(50, doorY, doorW, doorH);
+  ctx.fillStyle = '#050301';
+  ctx.fillRect(66, doorY + 16, doorW - 32, doorH - 32);
+
+  ctx.fillStyle = '#140a04';
+  ctx.fillRect(WORLD_WIDTH - 200, doorY, doorW, doorH);
+  ctx.fillStyle = '#050301';
+  ctx.fillRect(WORLD_WIDTH - 184, doorY + 16, doorW - 32, doorH - 32);
+
+  ctx.restore();
+}
+
+function drawPlayer() {
+  const screenX = player.worldX - cameraX;
+  let yOffset = 0;
+  if (player.isMoving) {
+    player.bobOffset += 0.08;
+    yOffset = Math.sin(player.bobOffset * 2) * 3.5;
+  } else {
+    player.bobOffset = 0;
+  }
+
+  const charTopY = player.y - player.height + yOffset;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(screenX, player.y, player.width / 2.5, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#111318';
+  ctx.fillRect(screenX - player.width / 3, charTopY + 65, player.width / 1.5, player.height * 0.55);
+
+  ctx.fillStyle = '#d0b098';
+  ctx.beginPath();
+  ctx.arc(screenX, charTopY + 40, player.width * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#1f1b18';
+  ctx.beginPath();
+  ctx.arc(screenX, charTopY + 34, player.width * 0.22, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#6b1111';
+  ctx.fillRect(screenX - player.width * 0.28, charTopY + 58, player.width * 0.56, 16);
+
+  let legOffset = 0;
+  if (player.isMoving) {
+    legOffset = Math.sin(player.bobOffset * 2) * 16;
+  }
+
+  ctx.fillStyle = '#0a0b0e';
+  ctx.fillRect(screenX - player.width * 0.22, charTopY + player.height * 0.65, player.width * 0.18, (player.height * 0.3) + legOffset);
+  ctx.fillRect(screenX + player.width * 0.04, charTopY + player.height * 0.65, player.width * 0.18, (player.height * 0.3) - legOffset);
+
+  ctx.fillStyle = '#050505';
+  ctx.fillRect(screenX - player.width * 0.25, charTopY + player.height - 12 + legOffset, player.width * 0.22, 16);
+  ctx.fillRect(screenX + player.width * 0.03, charTopY + player.height - 12 - legOffset, player.width * 0.22, 16);
+
+  ctx.fillStyle = '#111318';
+  if (player.facing === 'left') {
+    ctx.fillRect(screenX - player.width * 0.38, charTopY + 70, player.width * 0.2, player.height * 0.38);
+  } else {
+    ctx.fillRect(screenX + player.width * 0.18, charTopY + 70, player.width * 0.2, player.height * 0.38);
+  }
+
+  ctx.restore();
+}
+
+function update() {
+  if (gameState === 'PLAYING') {
+    player.isMoving = false;
+    if (keys.left) {
+      player.worldX -= player.speed;
+      player.facing = 'left';
+      player.isMoving = true;
+    }
+    if (keys.right) {
+      player.worldX += player.speed;
+      player.facing = 'right';
+      player.isMoving = true;
+    }
+    if (player.isMoving) {
+      playFootstep();
+    }
+    if (player.worldX <= 140) {
+      if (isAnomaly) {
+        triggerFade('FADING_NEXT');
+      } else {
+        triggerFade('FADING_LOSE', "ตาบอดหรอ มันผิดตรงไหน");
+      }
+    }
+    if (player.worldX >= WORLD_WIDTH - 140) {
+      if (!isAnomaly) {
+        triggerFade('FADING_NEXT');
+      } else {
+        triggerFade('FADING_LOSE', "มีความฝันอย่างอื่นไหมครับ");
+      }
+    }
+  }
+
+  cameraX = player.worldX - canvas.width / 2;
+  cameraX = Math.max(0, Math.min(WORLD_WIDTH - canvas.width, cameraX));
+
+  if (fadeDir !== 0) {
+    fadeAlpha += 0.03 * fadeDir;
+    if (fadeAlpha >= 1) {
+      fadeAlpha = 1;
+      fadeDir = 0;
+      if (gameState === 'FADING_NEXT') {
+        level--;
+        if (level <= 0) {
+          gameState = 'WIN';
+          stopBGM();
+          playVictorySound();
+          winMessage = winMsgs[Math.floor(Math.random() * winMsgs.length)];
+        } else {
+          resetLevel();
+        }
+      } else if (gameState === 'FADING_LOSE') {
+        gameState = 'GAME_OVER';
+        stopBGM();
+      }
+    } else if (fadeAlpha <= 0) {
+      fadeAlpha = 0;
+      fadeDir = 0;
+      if (gameState.startsWith('FADING')) {
+        gameState = 'PLAYING';
+      }
+    }
+  }
+}
+
+function drawUI() {
+  const screenX = player.worldX - cameraX;
+  const playerCenterY = player.y - player.height / 2;
+  const innerRadius = 140;
+  const outerRadius = 520;
+  
+  const gradient = ctx.createRadialGradient(screenX, playerCenterY, innerRadius, screenX, playerCenterY, outerRadius);
+  gradient.addColorStop(0, 'rgba(0,0,0,0)');
+  gradient.addColorStop(0.5, 'rgba(0,0,0,0.08)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0.96)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const touchControls = document.getElementById('touchControls');
+  if (gameState === 'PLAYING' || gameState.startsWith('FADING')) {
+    touchControls.style.display = 'flex';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.font = 'bold 26px "Courier Prime", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`Floor ${level}`, canvas.width - 35, 45);
+  } else {
+    touchControls.style.display = 'none';
+  }
+
+  if (fadeAlpha > 0) {
+    ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  ctx.textAlign = 'center';
+  if (gameState === 'START') {
+    ctx.fillStyle = 'rgba(0,0,0,0.95)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.shadowColor = '#ff1111';
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = '#d91414';
+    ctx.font = 'bold 56px "Courier Prime", monospace';
+    ctx.fillText('The Diatonic', canvas.width/2, canvas.height/2 - 125);
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#cccccc';
+    ctx.font = '19px "Courier Prime", monospace';
+    ctx.fillText('คุณติดอยู่ที่ชั้น12 และไม่มีสัญญาณมือถือ', canvas.width/2, canvas.height/2 - 60);
+    ctx.fillText('จงเลือกทางที่ถูกต้องเพื่อออกไปจากที่นี่… แต่ถ้าหากคุณเลือกผิดทาง :)', canvas.width/2, canvas.height/2 - 25);
+
+    ctx.fillStyle = '#888888';
+    ctx.font = '18px "Courier Prime", monospace';
+    ctx.fillText('หากเป็น "Major Scale ปกติ" ให้เดินไปทาง ขวา | หาก "ผิดเพี้ยน (Anomaly)" ให้หนีไปทาง ซ้าย', canvas.width/2, canvas.height/2 + 25);
+
+    ctx.fillStyle = '#ffaa33';
+    ctx.font = 'bold 20px "Courier Prime", monospace';
+    ctx.fillText('>> แตะหน้าจอ หรือกดปุ่มลูกศรเพื่อเริ่มเกม <<', canvas.width/2, canvas.height/2 + 95);
+  }
+  else if (gameState === 'GAME_OVER') {
+    ctx.fillStyle = '#ff2222';
+    ctx.font = 'bold 60px "Courier Prime", monospace';
+    ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 45);
+
+    ctx.fillStyle = '#ffaa22';
+    ctx.font = 'italic 26px "Courier Prime", monospace';
+    ctx.fillText(`"${failMessage}"`, canvas.width/2, canvas.height/2 + 35);
+
+    ctx.fillStyle = '#aaaaaa';
+    ctx.font = '18px "Courier Prime", monospace';
+    ctx.fillText('แตะหน้าจอเพื่อเริ่มเผชิญหน้าใหม่ที่ชั้น 12', canvas.width/2, canvas.height/2 + 110);
+  }
+  else if (gameState === 'WIN') {
+    ctx.fillStyle = '#22dd44';
+    ctx.font = 'bold 70px "Courier Prime", monospace';
+    ctx.fillText('ESCAPED', canvas.width/2, canvas.height/2 - 45);
+
+    ctx.fillStyle = '#aaffbb';
+    ctx.font = 'italic 28px "Courier Prime", monospace';
+    ctx.fillText(`"${winMessage}"`, canvas.width/2, canvas.height/2 + 35);
+
+    ctx.fillStyle = '#aaaaaa';
+    ctx.font = '20px "Courier Prime", monospace';
+    ctx.fillText('แตะหน้าจอเพื่อเล่นอีกครั้ง', canvas.width/2, canvas.height/2 + 110);
+  }
+}
+
+function gameLoop() {
+  update();
+  drawScene();
+  drawPlayer();
+  drawUI();
+  requestAnimationFrame(gameLoop);
+}
+
+resizeCanvas();
+gameLoop();
+</script>
+</body>
+</html>

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สวนสัตว์จังหวะดนตรี (Zoo Music Rhythm Game)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Kanit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            user-select: none;
+            background: linear-gradient(135deg, #a8ede, #fed6e3);
+        }
+        @keyframes bounce-cursor {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animal-cursor {
+            animation: bounce-cursor 0.4s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 text-slate-800">
+
+    <header class="w-full max-w-4xl bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-4 mb-4 flex flex-col sm:flex-row justify-between items-center border border-white/40">
+        <div class="flex items-center space-x-3 mb-2 sm:mb-0">
+            <span class="text-4xl">🦁🐵🐘</span>
+            <div>
+                <h1 class="text-2xl font-extrabold text-emerald-700">สวนสัตว์จังหวะดนตรีสากล</h1>
+                <p class="text-sm text-slate-500">เรียนรู้ค่าโน้ตและจังหวะ 4/4 แบบสนุกสนาน</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="bg-emerald-100 px-4 py-2 rounded-xl text-emerald-800 font-bold shadow-inner">
+                ⭐ คะแนนรวม: <span id="total-score">0</span> / 100
+            </div>
+            <div class="bg-amber-100 px-4 py-2 rounded-xl text-amber-800 font-bold shadow-inner">
+                📌 ข้อ: <span id="current-question-num">1</span> / 10
+            </div>
+            <button onclick="downloadGameFile()" title="ดาวน์โหลดไฟล์เกมเก็บไว้เล่นออฟไลน์" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow flex items-center space-x-1 transition cursor-pointer">
+                <span>💾 ดาวน์โหลดเกม</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="w-full max-w-4xl flex-grow flex flex-col items-center justify-center bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-6 relative overflow-hidden border border-white/60">
+
+        <!-- Welcome / Instructions Screen -->
+        <div id="screen-start" class="flex flex-col items-center text-center space-y-6 py-8">
+            <div class="text-7xl animate-bounce">🦒🥁🦓</div>
+            <h2 class="text-3xl font-bold text-emerald-600">ยินดีต้อนรับสู่สวนสัตว์จังหวะโน้ต!</h2>
+            <p class="max-w-xl text-slate-600 text-lg leading-relaxed">
+                ในห้องเพลงอัตราจังหวะ <span class="font-bold text-emerald-600">4/4</span> นี้ <br>
+                1. ระบบจะแสดงโน้ตโจทย์ให้ดูก่อน <b>(Preview)</b><br>
+                2. นับถอยหลัง 4 จังหวะเมโทรนอม<br>
+                3. ให้คุณกดปุ่ม <kbd class="px-3 py-1 bg-slate-200 border border-slate-300 rounded-lg shadow font-mono text-emerald-700">SPACEBAR</kbd> หรือปุ่มเคาะให้ตรงจังหวะสัตว์วิ่งผ่านโน้ตจากซ้ายไปขวา!
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-left w-full max-w-xl text-sm">
+                <div>🎼 <b>ตัวกลม:</b> 4 จังหวะ</div>
+                <div>🎵 <b>ตัวขาว:</b> 2 จังหวะ</div>
+                <div>♩ <b>ตัวดำ:</b> 1 จังหวะ</div>
+                <div>♪ <b>เขบ็ต 1 ชั้น:</b> 0.5 จังหวะ</div>
+            </div>
+            <button onclick="startGame()" class="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xl rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition transform active:scale-95 cursor-pointer">
+                🚀 เริ่มต้นผจญภัยในสวนสัตว์
+            </button>
+        </div>
+
+        <!-- Preview & Countdown Screen -->
+        <div id="screen-preview" class="hidden flex flex-col items-center space-y-6 w-full py-4">
+            <div class="text-center">
+                <span class="text-xs text-emerald-600 font-bold uppercase tracking-wider bg-emerald-100 px-3 py-1 rounded-full">รอบดูโน้ตโจทย์ก่อนเริ่ม</span>
+                <h3 id="preview-q-title" class="text-2xl font-extrabold text-slate-800 mt-2">กำลังเตรียมโจทย์...</h3>
+                <p class="text-sm text-slate-500 mt-1">จดจำตำแหน่งโน้ต เตรียมตัวนับจังหวะในอีกสักครู่...</p>
+            </div>
+
+            <!-- Preview Staff Board -->
+            <div class="relative w-full h-48 bg-gradient-to-b from-slate-50 to-emerald-50/50 rounded-3xl border-2 border-emerald-200 shadow-inner overflow-hidden flex flex-col justify-center px-8">
+                <div class="absolute w-full left-0 space-y-4 pointer-events-none opacity-40">
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                </div>
+                <div class="absolute inset-0 flex justify-between px-16 pointer-events-none opacity-20">
+                    <div class="border-r border-dashed border-slate-600 h-full"></div>
+                    <div class="border-r border-dashed border-slate-600 h-full"></div>
+                    <div class="border-r border-dashed border-slate-600 h-full"></div>
+                    <div class="border-r border-dashed border-slate-600 h-full"></div>
+                </div>
+                <div id="preview-notes-container" class="relative w-full h-32 flex items-center"></div>
+            </div>
+
+            <!-- Metronome Countdown Box -->
+            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 w-full max-w-md flex flex-col items-center space-y-3">
+                <div class="text-sm font-bold text-emerald-700" id="countdown-label">เมโทรนอมนับจังหวะ (4 จังหวะ):</div>
+                <div id="countdown-number" class="text-5xl font-black text-emerald-600 animate-pulse">4</div>
+                <div class="flex space-x-3" id="metronome-dots">
+                    <div class="w-5 h-5 rounded-full bg-slate-200 transition-colors duration-200" id="dot-0"></div>
+                    <div class="w-5 h-5 rounded-full bg-slate-200 transition-colors duration-200" id="dot-1"></div>
+                    <div class="w-5 h-5 rounded-full bg-slate-200 transition-colors duration-200" id="dot-2"></div>
+                    <div class="w-5 h-5 rounded-full bg-slate-200 transition-colors duration-200" id="dot-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gameplay Screen -->
+        <div id="screen-game" class="hidden w-full flex flex-col items-center space-y-8 py-4">
+            <div class="flex justify-between w-full items-center bg-emerald-50 px-6 py-3 rounded-2xl border border-emerald-100">
+                <div>
+                    <span class="text-xs text-slate-400 uppercase font-semibold">โจทย์ข้อที่ <span id="q-idx">1</span> / 10</span>
+                    <h3 id="q-title" class="text-xl font-bold text-emerald-800">รูปแบบจังหวะที่ 1</h3>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400 uppercase font-semibold">จังหวะกำลังเดิน (BPM: 70)</span>
+                    <div id="metronome-ticker" class="text-lg font-bold text-teal-600">🎵 ติ๊ก... ต็อก...</div>
+                </div>
+            </div>
+
+            <!-- Staff & Track Board -->
+            <div class="relative w-full h-56 bg-gradient-to-b from-slate-50 to-emerald-50/50 rounded-3xl border-2 border-emerald-200 shadow-inner overflow-hidden flex flex-col justify-center px-8">
+                <!-- Musical Staff Lines (5 lines) -->
+                <div class="absolute w-full left-0 space-y-4 pointer-events-none opacity-40">
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                    <div class="w-full h-0.5 bg-slate-400"></div>
+                </div>
+
+                <!-- Beat background guides -->
+                <div class="absolute inset-0 flex justify-between px-16 pointer-events-none opacity-20">
+                    <div class="border-r border-dashed border-slate-600 h-full"></div>
+                    <div class="border-r border-dashed border-slate-600 h-full"></div>
+                    <div class="border-r border-dashed border-slate-600 h-full"></div>
+                    <div class="border-r border-dashed border-slate-600 h-full"></div>
+                </div>
+
+                <!-- Notes Container -->
+                <div id="notes-track-container" class="relative w-full h-32 flex items-center"></div>
+
+                <!-- Running Animal Cursor starting from left -->
+                <div id="animal-cursor" class="absolute top-1/2 -translate-y-1/2 left-[5%] transition-all duration-75 pointer-events-none z-20 flex flex-col items-center">
+                    <span id="cursor-emoji" class="text-4xl animal-cursor drop-shadow-md">🐒</span>
+                    <div class="w-1 h-36 bg-red-500 rounded-full shadow-lg -mt-10 opacity-70"></div>
+                </div>
+            </div>
+
+            <!-- Interaction Control / Feedback area -->
+            <div class="flex flex-col items-center space-y-3 w-full">
+                <button onclick="triggerHit()" class="w-full max-w-md py-4 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold text-xl rounded-2xl shadow-lg hover:shadow-xl transform active:scale-95 transition cursor-pointer flex items-center justify-center space-x-2">
+                    <span>🐾 กดเคาะจังหวะ (กด Spacebar) 🐾</span>
+                </button>
+                <div id="action-feedback" class="text-lg font-bold h-8 text-center text-slate-500">กด Spacebar ให้ตรงโน้ต!</div>
+            </div>
+        </div>
+
+        <!-- Result / Feedback per question Screen -->
+        <div id="screen-result" class="hidden flex flex-col items-center text-center space-y-6 py-6 w-full max-w-xl">
+            <div class="text-6xl" id="result-icon">🎉</div>
+            <h2 class="text-2xl font-bold text-slate-800" id="result-title">สรุปผลข้อนี้</h2>
+            <div class="bg-slate-50 w-full p-4 rounded-2xl border border-slate-200 text-left space-y-3">
+                <div class="flex justify-between font-semibold">
+                    <span>คะแนนที่ได้ข้อนี้:</span>
+                    <span id="score-earned" class="text-emerald-600">0 / 10</span>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500 mb-2 font-medium">ผลการกดโน้ตแต่ละตัว:</p>
+                    <div id="note-breakdown-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+            <button onclick="nextQuestion()" class="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg rounded-2xl shadow-md transition cursor-pointer">
+                ไปข้อถัดไป ➡️
+            </button>
+        </div>
+
+        <!-- Final Summary Screen -->
+        <div id="screen-final" class="hidden flex flex-col items-center text-center space-y-6 py-6 w-full max-w-xl">
+            <div class="text-7xl">🏆</div>
+            <h2 class="text-3xl font-extrabold text-emerald-700">จบเกมแล้ว! เก่งมากเลย</h2>
+            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-3xl border border-emerald-200 w-full shadow-inner">
+                <p class="text-slate-600 text-lg mb-2">คะแนนรวมทั้งหมดของคุณในสวนสัตว์ดนตรี:</p>
+                <div id="final-total-score" class="text-5xl font-black text-emerald-600 mb-4">0 / 100</div>
+                <p id="final-remark" class="text-slate-700 font-medium">คุณคือนักดนตรีเอกแห่งสวนสัตว์!</p>
+            </div>
+            <div class="flex space-x-3">
+                <button onclick="restartGame()" class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-lg rounded-2xl shadow-lg hover:shadow-xl transition cursor-pointer">
+                    🔄 เล่นใหม่อีกครั้ง
+                </button>
+                <button onclick="downloadGameFile()" class="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-lg rounded-2xl shadow-lg transition cursor-pointer">
+                    💾 ดาวน์โหลดไฟล์เก็บไว้
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full max-w-4xl text-center text-xs text-slate-500 mt-4">
+        สื่อการสอนดนตรีสากล • ค่าโน้ตและจังหวะ 4/4 ธีมสวนสัตว์ 🦁🎵
+    </footer>
+
+    <script>
+        const questionsData = [
+            {
+                id: 1,
+                title: "คุณสิงโตพาเดิน: โน้ตตัวดำ 4 ตัว",
+                animal: "🦁",
+                notes: [
+                    { beat: 1.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 2.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 3.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 4.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 }
+                ]
+            },
+            {
+                id: 2,
+                title: "คุณช้างก้าวช้า: โน้ตตัวขาว 2 ตัว",
+                animal: "🐘",
+                notes: [
+                    { beat: 1.0, type: "half", label: "𝅗𝅥 (ตัวขาว)", duration: 2.0 },
+                    { beat: 3.0, type: "half", label: "𝅗𝅥 (ตัวขาว)", duration: 2.0 }
+                ]
+            },
+            {
+                id: 3,
+                title: "นกฮูกบินโฉบ: เขบ็ตสลับตัวดำ",
+                animal: "🦉",
+                notes: [
+                    { beat: 1.0, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 1.5, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 2.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 3.0, type: "half", label: "𝅗𝅥 (ตัวขาว)", duration: 2.0 }
+                ]
+            },
+            {
+                id: 4,
+                title: "เจ้ายีราฟยืดคอ: ตัวดำผสมเขบ็ต",
+                animal: "🦒",
+                notes: [
+                    { beat: 1.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 2.0, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 2.5, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 3.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 4.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 }
+                ]
+            },
+            {
+                id: 5,
+                title: "เจ้าลิงจอมซน: จังหวะเขบ็ตและตัวขาว",
+                animal: "🐵",
+                notes: [
+                    { beat: 1.0, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 1.5, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 2.0, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 2.5, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 3.0, type: "half", label: "𝅗𝅥 (ตัวขาว)", duration: 2.0 }
+                ]
+            },
+            {
+                id: 6,
+                title: "เต่าตัวน้อยเดินช้า: โน้ตตัวกลมเต็มห้อง",
+                animal: "🐢",
+                notes: [
+                    { beat: 1.0, type: "whole", label: "𝅝 (ตัวกลม)", duration: 4.0 }
+                ]
+            },
+            {
+                id: 7,
+                title: "ม้าลายวิ่งเหยาะๆ: จังหวะผสมผสาน",
+                animal: "🦓",
+                notes: [
+                    { beat: 1.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 2.0, type: "half", label: "𝅗𝅥 (ตัวขาว)", duration: 2.0 },
+                    { beat: 4.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 }
+                ]
+            },
+            {
+                id: 8,
+                title: "จิงโจ้กระโดดดึ๋ง: เขบ็ตคู่ต่อเนื่อง",
+                animal: "🦘",
+                notes: [
+                    { beat: 1.0, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 1.5, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 2.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 3.0, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 3.5, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 4.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 }
+                ]
+            },
+            {
+                id: 9,
+                title: "เพนกวินเต้นระบำ: จังหวะกระชับสนุก",
+                animal: "🐧",
+                notes: [
+                    { beat: 1.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 2.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 3.0, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 3.5, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 4.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 }
+                ]
+            },
+            {
+                id: 10,
+                title: "คอนเสิร์ตใหญ่สวนสัตว์: บททดสอบขั้นสูง",
+                animal: "🐯",
+                notes: [
+                    { beat: 1.0, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 1.5, type: "eighth", label: "♪ (เขบ็ต 1 ชั้น)", duration: 0.5 },
+                    { beat: 2.0, type: "quarter", label: "♩ (ตัวดำ)", duration: 1.0 },
+                    { beat: 3.0, type: "half", label: "𝅗𝅥 (ตัวขาว)", duration: 2.0 }
+                ]
+            }
+        ];
+
+        let currentQIndex = 0;
+        let totalScore = 0;
+        let gameInterval = null;
+        let currentBeat = 0.0;
+        const bpm = 70;
+        const beatDurationMs = (60 / bpm) * 1000;
+        
+        let isPlaying = false;
+        let noteResults = [];
+        let hitRegisteredForCurrentNotes = new Set();
+
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(freq, type = 'sine', duration = 0.1) {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {
+                console.log("Audio not allowed yet");
+            }
+        }
+
+        function startGame() {
+            initAudio();
+            document.getElementById('screen-start').classList.add('hidden');
+            currentQIndex = 0;
+            totalScore = 0;
+            document.getElementById('total-score').innerText = totalScore;
+            startPreviewAndCountdown();
+        }
+
+        function renderNotesToContainer(containerId, notes) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            notes.forEach((note) => {
+                const noteEl = document.createElement('div');
+                const leftPercent = ((note.beat - 1.0) / 3.0) * 85 + 5;
+                noteEl.className = 'absolute flex flex-col items-center transform -translate-x-1/2';
+                noteEl.style.left = `${leftPercent}%`;
+                
+                let symbolIcon = '♩';
+                let symbolTitle = 'ตัวดำ (Quarter Note)';
+                let extraWidthClass = '';
+
+                if(note.type === 'whole') {
+                    symbolIcon = '𝅝';
+                    symbolTitle = 'ตัวกลม (Whole Note - 4 จังหวะ)';
+                } else if(note.type === 'half') {
+                    symbolIcon = '𝅗𝅥';
+                    symbolTitle = 'ตัวขาว (Half Note - 2 จังหวะ)';
+                } else if(note.type === 'quarter') {
+                    symbolIcon = '♩';
+                    symbolTitle = 'ตัวดำ (Quarter Note - 1 จังหวะ)';
+                } else if(note.type === 'eighth') {
+                    symbolIcon = '♪';
+                    symbolTitle = 'เขบ็ต 1 ชั้น (Eighth Note - 0.5 จังหวะ)';
+                }
+
+                noteEl.innerHTML = `
+                    <div class="text-4xl text-emerald-700 font-bold drop-shadow flex items-center justify-center" title="${symbolTitle}">${symbolIcon}</div>
+                    <span class="text-xs bg-white/90 px-2 py-0.5 rounded-full border border-emerald-200 text-slate-600 mt-1 whitespace-nowrap">${note.label}</span>
+                `;
+                container.appendChild(noteEl);
+            });
+        }
+
+        function startPreviewAndCountdown() {
+            const previewScreen = document.getElementById('screen-preview');
+            previewScreen.classList.remove('hidden');
+
+            const q = questionsData[currentQIndex];
+            document.getElementById('current-question-num').innerText = q.id;
+            document.getElementById('preview-q-title').innerText = q.title;
+
+            renderNotesToContainer('preview-notes-container', q.notes);
+
+            let count = 4;
+            document.getElementById('countdown-number').innerText = count;
+            for(let i=0; i<4; i++) {
+                document.getElementById(`dot-${i}`).classList.remove('bg-emerald-500', 'scale-125');
+            }
+
+            let tick = 0;
+            const countInterval = setInterval(() => {
+                for(let i=0; i<4; i++) {
+                    document.getElementById(`dot-${i}`).classList.remove('bg-emerald-500', 'scale-125');
+                }
+                
+                if (tick < 4) {
+                    playSound(tick === 0 ? 880 : 440, 'triangle', 0.1);
+                    document.getElementById(`dot-${tick}`).classList.add('bg-emerald-500', 'scale-125');
+                    document.getElementById('countdown-number').innerText = 4 - tick;
+                    tick++;
+                } else {
+                    clearInterval(countInterval);
+                    previewScreen.classList.add('hidden');
+                    launchGameplay();
+                }
+            }, beatDurationMs);
+        }
+
+        function launchGameplay() {
+            const gameScreen = document.getElementById('screen-game');
+            gameScreen.classList.remove('hidden');
+
+            const q = questionsData[currentQIndex];
+            document.getElementById('q-idx').innerText = q.id;
+            document.getElementById('q-title').innerText = q.title;
+            document.getElementById('cursor-emoji').innerText = q.animal;
+
+            renderNotesToContainer('notes-track-container', q.notes);
+
+            currentBeat = 1.0;
+            isPlaying = true;
+            hitRegisteredForCurrentNotes = new Set();
+            noteResults = q.notes.map(n => ({ ...n, status: 'missed' }));
+
+            document.getElementById('animal-cursor').style.left = '5%';
+
+            const startTime = performance.now();
+            const tickerIntervalMs = 30;
+
+            gameInterval = setInterval(() => {
+                const elapsed = performance.now() - startTime;
+                const progress = elapsed / (beatDurationMs * 3.0);
+                currentBeat = 1.0 + progress * 3.0;
+
+                const cursorLeft = Math.min(Math.max(((currentBeat - 1.0) / 3.0) * 85 + 5, 5), 90);
+                document.getElementById('animal-cursor').style.left = `${cursorLeft}%`;
+
+                const nearestBeat = Math.round(currentBeat);
+                if(Math.abs(currentBeat - nearestBeat) < 0.05) {
+                    document.getElementById('metronome-ticker').innerText = `🎵 ติ๊ก (${nearestBeat})`;
+                    playSound(nearestBeat === 1 ? 880 : 520, 'sine', 0.06);
+                }
+
+                if (currentBeat > 4.2 || elapsed > (beatDurationMs * 3.5 + 400)) {
+                    clearInterval(gameInterval);
+                    isPlaying = false;
+                    evaluateResults();
+                }
+            }, tickerIntervalMs);
+        }
+
+        function triggerHit() {
+            if (!isPlaying) return;
+
+            playSound(650, 'sine', 0.08);
+            const q = questionsData[currentQIndex];
+            let hitFound = false;
+
+            q.notes.forEach((note, idx) => {
+                if (hitRegisteredForCurrentNotes.has(idx)) return;
+
+                const diff = Math.abs(currentBeat - note.beat);
+                if (diff <= 0.45) {
+                    hitRegisteredForCurrentNotes.add(idx);
+                    hitFound = true;
+                    if (diff <= 0.2) {
+                        noteResults[idx].status = 'perfect';
+                        showActionFeedback("✨ เพอร์เฟกต์! แม่นยำมาก", "text-emerald-600");
+                    } else {
+                        noteResults[idx].status = 'good';
+                        showActionFeedback("👍 ดีมาก! ตรงจังหวะ", "text-teal-600");
+                    }
+                }
+            });
+
+            if (!hitFound) {
+                showActionFeedback("❌ ผิดจังหวะ!", "text-rose-500");
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                triggerHit();
+            }
+        });
+
+        function showActionFeedback(text, colorClass) {
+            const fb = document.getElementById('action-feedback');
+            fb.innerText = text;
+            fb.className = `text-lg font-bold h-8 text-center ${colorClass} transition-all transform scale-105`;
+            setTimeout(() => {
+                fb.classList.remove('scale-105');
+            }, 150);
+        }
+
+        function evaluateResults() {
+            document.getElementById('screen-game').classList.add('hidden');
+            const resultScreen = document.getElementById('screen-result');
+            resultScreen.classList.remove('hidden');
+
+            let qScore = 0;
+            const listContainer = document.getElementById('note-breakdown-list');
+            listContainer.innerHTML = '';
+
+            noteResults.forEach((nr, i) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-100 text-sm shadow-sm';
+                
+                let badge = '';
+                if (nr.status === 'perfect') {
+                    qScore += 10;
+                    badge = '<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold text-xs">⭐ ถูกต้อง (10 คะแนน)</span>';
+                } else if (nr.status === 'good') {
+                    qScore += 7;
+                    badge = '<span class="bg-teal-100 text-teal-800 px-2.5 py-1 rounded-full font-bold text-xs">👍 เกือบตรง (7 คะแนน)</span>';
+                } else {
+                    badge = '<span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold text-xs">❌ พลาดโน้ตนี้ (0 คะแนน)</span>';
+                }
+
+                itemDiv.innerHTML = `
+                    <span class="font-medium text-slate-700">โน้ตตัวที่ ${i+1} (${nr.label} ที่จังหวะที่ ${nr.beat})</span>
+                    ${badge}
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+
+            const finalQScoreNormalized = Math.round((qScore / (noteResults.length * 10)) * 10);
+            totalScore += finalQScoreNormalized;
+            document.getElementById('total-score').innerText = totalScore;
+            document.getElementById('score-earned').innerText = `${finalQScoreNormalized} / 10`;
+
+            if (finalQScoreNormalized >= 8) {
+                document.getElementById('result-icon').innerText = '🎉';
+                document.getElementById('result-title').innerText = 'ยอดเยี่ยมมาก!';
+            } else if (finalQScoreNormalized >= 5) {
+                document.getElementById('result-icon').innerText = '👏';
+                document.getElementById('result-title').innerText = 'ทำได้ดี!';
+            } else {
+                document.getElementById('result-icon').innerText = '💡';
+                document.getElementById('result-title').innerText = 'พยายามใหม่อีกนิดนะ!';
+            }
+        }
+
+        function nextQuestion() {
+            document.getElementById('screen-result').classList.add('hidden');
+            currentQIndex++;
+            if (currentQIndex < questionsData.length) {
+                startPreviewAndCountdown();
+            } else {
+                showFinalSummary();
+            }
+        }
+
+        function showFinalSummary() {
+            document.getElementById('screen-final').classList.remove('hidden');
+            document.getElementById('final-total-score').innerText = `${totalScore} / 100`;
+            
+            const remark = document.getElementById('final-remark');
+            if (totalScore >= 80) {
+                remark.innerText = "🌟 สุดยอดนักดนตรีเอกแห่งสวนสัตว์! คุณเข้าใจจังหวะ 4/4 และค่าโน้ตอย่างถ่องแท้";
+            } else if (totalScore >= 50) {
+                remark.innerText = "🎵 เก่งมาก! คุณมีความเข้าใจจังหวะดนตรีดีเยี่ยม ลองฝึกฝนอีกนิดจะเก่งขึ้นแน่นอน";
+            } else {
+                remark.innerText = "🐾 พยายามได้ดี! ลองทบทวนค่าโน้ตตัวกลม ตัวขาว และตัวดำ แล้วมาสนุกกันใหม่นะ";
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('screen-final').classList.add('hidden');
+            document.getElementById('screen-start').classList.remove('hidden');
+        }
+
+        function downloadGameFile() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'zoo_music_rhythm_game.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

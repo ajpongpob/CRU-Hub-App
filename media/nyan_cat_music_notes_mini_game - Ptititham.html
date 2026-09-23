@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมฝึกอ่านโน้ตดนตรีสากล: ให้น้องเหมียวอิ่มอร่อย!</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Sarabun & Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Sarabun', 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #1a1c29 0%, #2b1055 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .rainbow-bg {
+            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+        }
+        /* Custom drag and drop styles */
+        .draggable-fish {
+            cursor: grab;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .draggable-fish:active {
+            cursor: grabbing;
+        }
+        .draggable-fish.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        .drop-zone {
+            transition: all 0.3s ease;
+        }
+        .drop-zone.drag-over {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: #f43f5e;
+            transform: scale(1.05);
+        }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .nyan-cat-bounce {
+            animation: bounce-slow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-4 md:p-6">
+
+    <header class="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between bg-white/10 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/20 mb-4">
+        <div class="flex items-center gap-3 mb-3 sm:mb-0">
+            <div class="bg-pink-500 p-3 rounded-2xl text-2xl shadow-lg nyan-cat-bounce">
+                🐱‍🚀
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold font-['Fredoka'] text-pink-300">Nyan Cat Note Feeder</h1>
+                <p class="text-xs text-gray-300">เกมฝึกอ่านโน้ตในบรรทัด 5 เส้น (Treble Clef)</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-white/10 text-center">
+                <span class="text-xs text-gray-400 block">คะแนนรวม</span>
+                <span id="scoreDisplay" class="text-xl font-bold text-yellow-400">0</span>
+            </div>
+            <div class="bg-black/30 px-4 py-2 rounded-xl border border-white/10 text-center">
+                <span class="text-xs text-gray-400 block">ข้อที่</span>
+                <span id="questionProgress" class="text-xl font-bold text-cyan-400">1 / 10</span>
+            </div>
+        </div>
+    </header>
+
+    <main id="gameContainer" class="w-full max-w-4xl flex-1 flex flex-col items-center justify-center relative">
+        
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="w-full bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/20 text-center flex flex-col items-center">
+            <div class="text-6xl mb-4 nyan-cat-bounce">🐱‍🚀🌈</div>
+            <h2 class="text-3xl md:text-4xl font-bold font-['Fredoka'] text-pink-300 mb-4">ยินดีต้อนรับสู่ Nyan Note Feeder!</h2>
+            <p class="text-gray-200 max-w-xl mb-6 text-sm md:text-base leading-relaxed">
+                ช่วยน้องเหมียว Nyan Cat อิ่มอร่อยโดยการลาก <span class="text-yellow-300 font-bold">"ปลาตัวเลือก"</span> ที่มีชื่อโน้ตดนตรีสากลถูกต้อง ไปวางบนโน้ตในบรรทัด 5 เส้น (Grand Staff / Treble Clef) ให้ถูกต้องตามโจทย์ทั้งหมด 10 ข้อ!
+            </p>
+            <button onclick="startGame()" class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl text-lg transition transform hover:scale-105 flex items-center gap-3">
+                <i class="fa-solid fa-play"></i> เริ่มเล่นเกมเลย
+            </button>
+        </div>
+
+        <!-- Gameplay Screen (Hidden initially) -->
+        <div id="gameplayScreen" class="w-full hidden flex flex-col gap-6">
+            
+            <!-- Staff Board Box -->
+            <div class="w-full bg-white/95 text-gray-800 rounded-3xl p-6 shadow-2xl border-4 border-pink-400 relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <span id="questionPromptText" class="text-lg font-bold text-purple-700 flex items-center gap-2">
+                        <i class="fa-solid fa-music"></i> จงลากปลาที่มีชื่อโน้ตไปวางบนตำแหน่งที่ถูกต้อง:
+                    </span>
+                    <span id="questionTimer" class="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-full">ข้อที่ 1</span>
+                </div>
+
+                <!-- SVG Grand Staff Area -->
+                <div class="w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center relative min-h-[220px]">
+                    <!-- Nyan Cat character sitting on top/side -->
+                    <div class="absolute top-2 left-4 flex items-center gap-2">
+                        <div class="text-3xl nyan-cat-bounce">🐱‍👤</div>
+                        <div class="bg-pink-100 text-pink-700 text-xs px-3 py-1 rounded-xl font-bold shadow-sm">หิวปลาจังเลยรบกวนหน่อยนะ!</div>
+                    </div>
+
+                    <!-- SVG Staff Renderer -->
+                    <div id="staffContainer" class="w-full max-w-md flex justify-center py-6">
+                        <!-- SVG Rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fish Options Area (Draggable) -->
+            <div class="w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 shadow-xl border border-white/20">
+                <h3 class="text-sm font-semibold text-gray-300 mb-3 text-center flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-fish text-pink-400"></i> เลือกปลาตัวเลือกด้านล่าง ลากไปวางในช่องบรรทัด 5 เส้นด้านบน
+                </h3>
+                <div id="fishOptionsContainer" class="flex flex-wrap justify-center gap-4 min-h-[90px] items-center">
+                    <!-- Fish items will be injected here -->
+                </div>
+            </div>
+
+            <!-- Submit Answer Action -->
+            <div class="flex justify-end">
+                <button id="submitAnswerBtn" onclick="submitAnswer()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-3 rounded-2xl shadow-lg transition transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-check"></i> ตรวจคำตอบข้อนี้
+                </button>
+            </div>
+        </div>
+
+        <!-- Result / Summary Screen (Hidden initially) -->
+        <div id="resultScreen" class="w-full hidden bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/20 text-center flex flex-col items-center">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-3xl font-bold font-['Fredoka'] text-yellow-300 mb-2">สรุปผลคะแนนภารกิจ Nyan Cat!</h2>
+            <p id="finalScoreText" class="text-xl text-gray-200 mb-6">คุณทำคะแนนได้ 0 จาก 10 คะแนน</p>
+            
+            <!-- Detailed Review Container -->
+            <div class="w-full max-w-2xl bg-black/40 rounded-2xl p-4 max-h-[300px] overflow-y-auto mb-6 text-left border border-white/10" id="detailedReviewContainer">
+                <!-- Detailed reviews injected here -->
+            </div>
+
+            <button onclick="resetGame()" class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl text-lg transition transform hover:scale-105 flex items-center gap-3">
+                <i class="fa-solid fa-rotate-right"></i> เล่นใหม่อีกครั้ง
+            </button>
+        </div>
+
+    </main>
+
+    <footer class="w-full max-w-4xl text-center py-4 text-xs text-gray-400">
+        Nyan Cat Music Notes Educational Game &copy; 2026 | พัฒนาเพื่อการเรียนรู้ดนตรีสากล
+    </footer>
+
+    <script>
+        // 10 Unique Questions dataset based on Treble Clef Standard Staff Notes
+        // Notes coordinate details on treble staff:
+        // E4 (line 1 below staff/ledger line or bottom line? Standard Treble: E4 is bottom line, F4 space 1, G4 line 2, A4 space 2, B4 line 3, C5 space 3, D5 line 4, E5 space 4, F5 line 5, G5 space above)
+        // Let's use precise pixel/y coordinates for SVG rendering on 5-line staff.
+        // Staff lines Y coordinates: Line 5 (top) = 40, Line 4 = 60, Line 3 = 80, Line 2 = 100, Line 1 (bottom) = 120.
+        // Spaces: Space above 5 = 30, Space 4 = 50, Space 3 = 70, Space 2 = 90, Space 1 = 110. Ledger below = 140 (C4/Middle C or D4/E4).
+        
+        const questionsData = [
+            {
+                id: 1,
+                noteName: "E4",
+                noteLabel: "E4 (เส้นที่ 1 ของซีกซ้าย/ล่างสุด)",
+                noteY: 120, // Bottom line
+                isLedger: false,
+                options: ["C4", "E4", "G4", "B4"],
+                correctAnswer: "E4"
+            },
+            {
+                id: 2,
+                noteName: "G4",
+                noteLabel: "G4 (เส้นที่ 2)",
+                noteY: 100, // Line 2
+                isLedger: false,
+                options: ["F4", "G4", "A4", "C5"],
+                correctAnswer: "G4"
+            },
+            {
+                id: 3,
+                noteName: "B4",
+                noteLabel: "B4 (เส้นที่ 3 - ตรงกลาง)",
+                noteY: 80, // Line 3
+                isLedger: false,
+                options: ["B4", "D5", "F4", "E4"],
+                correctAnswer: "B4"
+            },
+            {
+                id: 4,
+                noteName: "D5",
+                noteLabel: "D5 (เส้นที่ 4)",
+                noteY: 60, // Line 4
+                isLedger: false,
+                options: ["C5", "D5", "E5", "G4"],
+                correctAnswer: "D5"
+            },
+            {
+                id: 5,
+                noteName: "F5",
+                noteLabel: "F5 (เส้นที่ 5 - บนสุด)",
+                noteY: 40, // Line 5
+                isLedger: false,
+                options: ["E5", "F5", "G5", "D5"],
+                correctAnswer: "F5"
+            },
+            {
+                id: 6,
+                noteName: "F4",
+                noteLabel: "F4 (ช่องที่ 1)",
+                noteY: 110, // Space 1
+                isLedger: false,
+                options: ["E4", "F4", "G4", "A4"],
+                correctAnswer: "F4"
+            },
+            {
+                id: 7,
+                noteName: "A4",
+                noteLabel: "A4 (ช่องที่ 2)",
+                noteY: 90, // Space 2
+                isLedger: false,
+                options: ["G4", "A4", "B4", "C5"],
+                correctAnswer: "A4"
+            },
+            {
+                id: 8,
+                noteName: "C5",
+                noteLabel: "C5 (ช่องที่ 3)",
+                noteY: 70, // Space 3
+                isLedger: false,
+                options: ["B4", "C5", "D5", "E5"],
+                correctAnswer: "C5"
+            },
+            {
+                id: 9,
+                noteName: "E5",
+                noteLabel: "E5 (ช่องที่ 4)",
+                noteY: 50, // Space 4
+                isLedger: false,
+                options: ["D5", "E5", "F5", "G5"],
+                correctAnswer: "E5"
+            },
+            {
+                id: 10,
+                noteName: "C4",
+                noteLabel: "C4 (Middle C - เส้นน้อยต่ำกว่าบรรทัดแรก)",
+                noteY: 140, // Ledger line below staff
+                isLedger: true,
+                options: ["C4", "D4", "E4", "F4"],
+                correctAnswer: "C4"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswersHistory = [];
+        let placedFishNote = null; // Currently placed answer in drop zone
+
+        function startGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswersHistory = [];
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('gameplayScreen').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            placedFishNote = null;
+            document.getElementById('submitAnswerBtn').disabled = true;
+            const q = questionsData[currentQuestionIndex];
+            document.getElementById('questionProgress').innerText = `${currentQuestionIndex + 1} / 10`;
+            document.getElementById('questionTimer').innerText = `ข้อที่ ${currentQuestionIndex + 1}`;
+
+            // Render Staff SVG
+            renderStaffSVG(q);
+
+            // Render Fish Options
+            renderFishOptions(q.options);
+        }
+
+        function renderStaffSVG(question) {
+            const container = document.getElementById('staffContainer');
+            
+            // SVG Staff lines y positions: 40, 60, 80, 100, 120
+            let svgHTML = `
+                <svg viewBox="0 0 350 160" class="w-full h-auto drop-shadow-sm">
+                    <!-- Treble Clef Symbol (G-Clef approximation or icon representation) -->
+                    <text x="25" y="115" font-size="75" fill="#7c3aed" font-family="serif">&#119070;</text>
+                    
+                    <!-- 5 Staff Lines -->
+                    <line x1="70" y1="40" x2="330" y2="40" stroke="#475569" stroke-width="2.5" />
+                    <line x1="70" y1="60" x2="330" y2="60" stroke="#475569" stroke-width="2.5" />
+                    <line x1="70" y1="80" x2="330" y2="80" stroke="#475569" stroke-width="2.5" />
+                    <line x1="70" y1="100" x2="330" y2="100" stroke="#475569" stroke-width="2.5" />
+                    <line x1="70" y1="120" x2="330" y2="120" stroke="#475569" stroke-width="2.5" />
+            `;
+
+            // If ledger line needed (C4)
+            if (question.isLedger) {
+                svgHTML += `<line x1="185" y1="140" x2="215" y2="140" stroke="#475569" stroke-width="2" />`;
+            }
+
+            // Target Drop Zone area indicator (Invisible target circle on staff)
+            svgHTML += `
+                <circle cx="200" cy="${question.noteY}" r="18" fill="transparent" stroke="#cbd5e1" stroke-dasharray="4,4" stroke-width="2" />
+            `;
+
+            // If user already placed a fish note on this staff position
+            if (placedFishNote) {
+                svgHTML += `
+                    <g transform="translate(180, ${question.noteY - 12})" class="cursor-pointer" onclick="removePlacedFish()">
+                        <!-- Fish Body SVG representation -->
+                        <ellipse cx="20" cy="12" rx="18" ry="12" fill="#ec4899" />
+                        <polygon points="2,12 -8,4 -8,20" fill="#ec4899" />
+                        <circle cx="28" cy="9" r="2.5" fill="#ffffff" />
+                        <circle cx="29" cy="9" r="1" fill="#000000" />
+                        <!-- Note Text -->
+                        <text x="15" y="16" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">${placedFishNote}</text>
+                    </g>
+                `;
+            } else {
+                svgHTML += `
+                    <text x="200" y="${question.noteY + 4}" font-size="12" fill="#94a3b8" text-anchor="middle" font-style="italic">ลากปลามาวางตรงนี้</text>
+                `;
+            }
+
+            svgHTML += `</svg>`;
+            container.innerHTML = svgHTML;
+        }
+
+        function renderFishOptions(options) {
+            const fishContainer = document.getElementById('fishOptionsContainer');
+            fishContainer.innerHTML = "";
+
+            options.forEach((opt) => {
+                // If this fish is already placed on the staff, skip rendering it in options pool
+                if (placedFishNote === opt) return;
+
+                const fishEl = document.createElement('div');
+                fishEl.className = "draggable-fish bg-gradient-to-r from-pink-500 to-rose-500 text-white px-5 py-3 rounded-2xl shadow-lg flex items-center gap-3 border-2 border-white/35 font-['Fredoka'] text-lg hover:shadow-pink-500/50";
+                fishEl.draggable = true;
+                fishEl.innerHTML = `
+                    <i class="fa-solid fa-fish text-yellow-300 text-xl animate-pulse"></i>
+                    <span>โน้ต: <strong>${opt}</strong></span>
+                `;
+
+                // Drag events
+                fishEl.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', opt);
+                    fishEl.classList.add('dragging');
+                });
+
+                fishEl.addEventListener('dragend', () => {
+                    fishEl.classList.remove('dragging');
+                });
+
+                // Touch support emulation or direct click to select
+                fishEl.addEventListener('click', () => {
+                    placedFishNote = opt;
+                    renderStaffSVG(questionsData[currentQuestionIndex]);
+                    renderFishOptions(questionsData[currentQuestionIndex].options);
+                    document.getElementById('submitAnswerBtn').disabled = false;
+                });
+
+                fishContainer.appendChild(fishEl);
+            });
+
+            // Make the staff container a valid drop zone
+            const staffDropZone = document.getElementById('staffContainer');
+            
+            // Remove previous listeners by cloning or handling cleanly
+            const newDropZone = staffDropZone.cloneNode(true);
+            staffDropZone.parentNode.replaceChild(newDropZone, staffDropZone);
+
+            // Re-select after replacement
+            const activeStaffZone = document.getElementById('staffContainer');
+            renderStaffSVG(questionsData[currentQuestionIndex]); // re-render inside new node
+
+            activeStaffZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                activeStaffZone.classList.add('drag-over');
+            });
+
+            activeStaffZone.addEventListener('dragleave', () => {
+                activeStaffZone.classList.remove('drag-over');
+            });
+
+            activeStaffZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                activeStaffZone.classList.remove('drag-over');
+                const droppedNote = e.dataTransfer.getData('text/plain');
+                if (droppedNote) {
+                    placedFishNote = droppedNote;
+                    renderStaffSVG(questionsData[currentQuestionIndex]);
+                    renderFishOptions(questionsData[currentQuestionIndex].options);
+                    document.getElementById('submitAnswerBtn').disabled = false;
+                }
+            });
+        }
+
+        function removePlacedFish() {
+            if (placedFishNote) {
+                placedFishNote = null;
+                renderStaffSVG(questionsData[currentQuestionIndex]);
+                renderFishOptions(questionsData[currentQuestionIndex].options);
+                document.getElementById('submitAnswerBtn').disabled = true;
+            }
+        }
+
+        function submitAnswer() {
+            if (!placedFishNote) return;
+
+            const q = questionsData[currentQuestionIndex];
+            const isCorrect = (placedFishNote === q.correctAnswer);
+
+            if (isCorrect) {
+                score++;
+            }
+
+            userAnswersHistory.push({
+                questionNum: currentQuestionIndex + 1,
+                noteLabel: q.noteLabel,
+                correctAnswer: q.correctAnswer,
+                userAnswer: placedFishNote,
+                isCorrect: isCorrect
+            });
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questionsData.length) {
+                loadQuestion();
+            } else {
+                showResultScreen();
+            }
+        }
+
+        function showResultScreen() {
+            document.getElementById('gameplayScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+            
+            document.getElementById('finalScoreText').innerText = `คุณทำคะแนนได้ ${score} จาก 10 คะแนน`;
+            document.getElementById('scoreDisplay').innerText = score;
+
+            const reviewContainer = document.getElementById('detailedReviewContainer');
+            reviewContainer.innerHTML = "";
+
+            userAnswersHistory.forEach((item) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `p-3 rounded-xl mb-2 border ${item.isCorrect ? 'bg-emerald-950/40 border-emerald-500/30' : 'bg-rose-950/40 border-rose-500/30'} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2`;
+                
+                itemDiv.innerHTML = `
+                    <div>
+                        <span class="text-xs font-bold text-gray-400 block">ข้อที่ ${item.questionNum}: ${item.noteLabel}</span>
+                        <div class="text-sm mt-1">
+                            คำตอบของคุณ: <span class="font-bold ${item.isCorrect ? 'text-emerald-400' : 'text-rose-400'}">${item.userAnswer}</span>
+                            ${!item.isCorrect ? `<span class="ml-2 text-gray-300">(เฉลยที่ถูกคือ: <strong class="text-yellow-300">${item.correctAnswer}</strong>)</span>` : ''}
+                        </div>
+                    </div>
+                    <div>
+                        ${item.isCorrect ? '<span class="bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full"><i class="fa-solid fa-check"></i> ถูกต้อง</span>' : '<span class="bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full"><i class="fa-solid fa-xmark"></i> ผิด</span>'}
+                    </div>
+                `;
+                reviewContainer.appendChild(itemDiv);
+            });
+        }
+
+        function resetGame() {
+            startGame();
+        }
+    </script>
+</body>
+</html>

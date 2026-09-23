@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interval Master - เกมทายระยะห่างเสียงดนตรีสากล</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #fcf8f2;
+            color: #2c2a29;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Japanese aesthetic pattern background */
+        .bg-pattern {
+            background-image: radial-gradient(#e5a9a1 0.8px, transparent 0.8px), radial-gradient(#e5a9a1 0.8px, #fcf8f2 0.8px);
+            background-size: 28px 28px;
+            background-position: 0 0, 14px 14px;
+        }
+
+        .jp-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px);
+            border: 2px solid #e8dbce;
+            box-shadow: 0 12px 30px -8px rgba(184, 50, 50, 0.12);
+        }
+
+        .arcade-btn {
+            position: relative;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 0px #991b1b, 0 8px 15px rgba(153, 27, 27, 0.2);
+        }
+        .arcade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 0px #991b1b, 0 12px 20px rgba(153, 27, 27, 0.25);
+        }
+        .arcade-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0px #991b1b, 0 3px 5px rgba(153, 27, 27, 0.2);
+        }
+
+        .option-btn {
+            box-shadow: 0 4px 0px #d97706, 0 6px 12px rgba(0,0,0,0.05);
+            transition: all 0.12s ease;
+        }
+        .option-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0px #b45309, 0 8px 16px rgba(180, 83, 9, 0.15);
+        }
+        .option-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0px #b45309;
+        }
+
+        /* Screen Shake Effect */
+        .shake-screen {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        /* Floating score animation */
+        .float-text {
+            animation: floatUp 0.8s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            50% { opacity: 1; transform: translateY(-30px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1); }
+        }
+
+        /* Mascot pulse */
+        .mascot-bounce {
+            animation: mascotIdle 2.5s infinite ease-in-out;
+        }
+        @keyframes mascotIdle {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(2deg); }
+        }
+
+        /* Falling Sakura Canvas */
+        #sakura-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Red Hanko Stamp */
+        .hanko-stamp {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #b83232;
+            color: #b83232;
+            border-radius: 50%;
+            font-weight: 900;
+            transform: rotate(-10deg);
+            box-shadow: 0 0 3px rgba(184, 50, 50, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-pattern min-h-screen flex flex-col justify-between relative selection:bg-red-200">
+    <!-- Falling Sakura Canvas -->
+    <canvas id="sakura-canvas"></canvas>
+
+    <div id="game-wrapper" class="relative z-10 flex-grow flex flex-col items-center justify-center p-3 sm:p-5 max-w-4xl mx-auto w-full">
+        
+        <!-- HEADER / TITLE BAR -->
+        <header class="w-full text-center mb-3 sm:mb-5">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 border border-red-300 text-red-800 text-xs sm:text-sm font-bold mb-1 shadow-sm">
+                <i class="fa-solid fa-gamepad"></i> MUSIC THEORY ARCADE
+            </div>
+            <h1 class="text-2xl sm:text-4xl font-black text-red-900 tracking-wide flex items-center justify-center gap-2 flex-wrap drop-shadow-sm">
+                <span>INTERVAL MASTER</span> 
+                <span class="text-amber-800 text-lg sm:text-2xl font-bold">| เกมทายระยะห่างเสียง</span>
+            </h1>
+        </header>
+
+        <!-- SCREEN 1: START GAME -->
+        <div id="start-screen" class="jp-card w-full rounded-2xl p-6 sm:p-10 text-center border-t-8 border-red-600 transition-all duration-300 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-red-100 rounded-full opacity-50 pointer-events-none"></div>
+            
+            <div class="w-24 h-24 bg-gradient-to-tr from-red-700 to-red-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl shadow-xl border-4 border-amber-200 mascot-bounce">
+                <i class="fa-solid fa-music"></i>
+            </div>
+            
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-2">ยินดีต้อนรับสู่โหมดประลองทฤษฎีดนตรี!</h2>
+            <p class="text-gray-600 text-sm sm:text-base max-w-lg mx-auto mb-6 leading-relaxed">
+                ทดสอบความแม่นยำในการอ่านระยะห่างระหว่างโน้ต (<span class="font-bold text-red-700">Interval</span>) ในอัตราจังหวะ 4/4 
+                มีหัวใจสะสม 3 ดวง สะสมคอมโบรับคะแนนคูณสอง!
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-8 text-left text-xs sm:text-sm">
+                <div class="p-3 bg-amber-50/90 rounded-xl border border-amber-200 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold text-lg">❤️</div>
+                    <div><b>ชีวิต 3 ดวง</b><br><span class="text-gray-500">ตอบผิดหัวใจจะลด</span></div>
+                </div>
+                <div class="p-3 bg-amber-50/90 rounded-xl border border-amber-200 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-lg">🔥</div>
+                    <div><b>ระบบ Combo</b><br><span class="text-gray-500">ตอบถูกติดกันเร่งคะแนน</span></div>
+                </div>
+                <div class="p-3 bg-amber-50/90 rounded-xl border border-amber-200 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">🔊</div>
+                    <div><b>ฟังเสียงโน้ต</b><br><span class="text-gray-500">กดฟังเสียงช่วยวิเคราะห์</span></div>
+                </div>
+            </div>
+
+            <button id="btn-start" class="arcade-btn bg-red-600 hover:bg-red-700 text-white font-black text-lg px-10 py-4 rounded-xl transition duration-200 flex items-center justify-center gap-3 mx-auto">
+                <i class="fa-solid fa-play text-xl"></i> เริ่มเล่นเกม (START GAME)
+            </button>
+        </div>
+
+        <!-- SCREEN 2: GAMEPLAY -->
+        <div id="game-screen" class="hidden w-full flex-col gap-3 sm:gap-4 relative">
+            
+            <!-- FLOATING SCORE NOTIFICATION CONTAINER -->
+            <div id="float-container" class="absolute top-16 left-1/2 transform -translate-x-1/2 pointer-events-none z-50"></div>
+
+            <!-- TOP HUD / STATS BAR -->
+            <div class="jp-card rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-md border-l-4 border-red-600 bg-white">
+                
+                <!-- Hearts / Health Bar -->
+                <div class="flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">
+                    <span class="text-xs font-bold text-red-800 mr-1 hidden sm:inline">พลังชีวิต:</span>
+                    <div id="hearts-container" class="flex gap-1 text-lg sm:text-xl">
+                        <!-- Hearts dynamically injected -->
+                    </div>
+                </div>
+
+                <!-- Stage / Question Tracker -->
+                <div class="flex flex-col items-center">
+                    <span class="text-[10px] sm:text-xs font-black text-amber-800 uppercase tracking-widest">STAGE</span>
+                    <div class="text-lg sm:text-2xl font-black text-red-900">
+                        <span id="question-number">1</span> <span class="text-xs text-gray-400">/ 10</span>
+                    </div>
+                </div>
+
+                <!-- Combo Counter -->
+                <div class="flex items-center gap-2">
+                    <div id="combo-badge" class="hidden items-center gap-1 bg-gradient-to-r from-amber-500 to-red-500 text-white font-black text-xs sm:text-sm px-2.5 py-1 rounded-full animate-pulse shadow-sm">
+                        <i class="fa-solid fa-fire"></i> <span id="combo-count">0</span>x
+                    </div>
+                    
+                    <!-- Score Counter -->
+                    <div class="text-right bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                        <span class="text-[10px] font-bold text-amber-800 block leading-none">SCORE</span>
+                        <span id="current-score" class="text-lg sm:text-2xl font-black text-amber-700 leading-none">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SHEET MUSIC QUESTION CARD -->
+            <div class="jp-card rounded-2xl p-3 sm:p-5 text-center relative overflow-hidden border-t-4 border-amber-600 bg-white">
+                
+                <!-- Mascot & Speech Bubble Bar -->
+                <div class="flex items-center gap-3 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/80 mb-3 text-left">
+                    <div id="mascot-avatar" class="w-11 h-11 bg-red-700 text-white rounded-full flex items-center justify-center text-xl shadow-md shrink-0 border-2 border-amber-200">
+                        🐱
+                    </div>
+                    <div class="flex-grow">
+                        <div id="mascot-speech" class="text-xs sm:text-sm font-bold text-amber-900">
+                            "วิเคราะห์ระยะห่างระหว่างโน้ตคู่นี้ให้ถูกต้องนะ!"
+                        </div>
+                    </div>
+                    <button id="btn-play-sound" class="arcade-btn text-xs bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-volume-high"></i> <span class="hidden sm:inline">ฟังเสียงโน้ต</span>
+                    </button>
+                </div>
+
+                <!-- SVG Staff Sheet Music Display -->
+                <div id="staff-container" class="w-full bg-amber-50/40 rounded-xl p-2 my-2 border border-amber-200/60 flex items-center justify-center min-h-[150px]">
+                    <!-- Dynamic SVG Sheet Music injected via JS -->
+                </div>
+
+                <p class="text-xs sm:text-sm font-extrabold text-gray-700 mt-1">
+                    ระยะห่างระหว่างโน้ตหลักในห้องเพลงนี้คือระยะห่างคู่ใด?
+                </p>
+            </div>
+
+            <!-- MULTIPLE CHOICE OPTIONS GRID -->
+            <div id="options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                <!-- Option buttons injected dynamically -->
+            </div>
+        </div>
+
+        <!-- SCREEN 3: GAME OVER / SUMMARY -->
+        <div id="summary-screen" class="hidden w-full jp-card rounded-2xl p-5 sm:p-8 border-t-8 border-red-700 bg-white relative">
+            <div class="text-center mb-5">
+                
+                <!-- Star Rating Banner -->
+                <div id="star-rating" class="flex justify-center gap-2 text-3xl sm:text-4xl text-amber-400 mb-2">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                </div>
+
+                <div id="hanko-result-stamp" class="hanko-stamp w-20 h-20 text-sm sm:text-base mb-2 mx-auto">
+                    ผ่านเกณฑ์
+                </div>
+                <h2 id="summary-title" class="text-2xl sm:text-3xl font-black text-gray-800">สรุปการทดสอบทฤษฎีดนตรี</h2>
+                <p id="summary-subtitle" class="text-xs sm:text-sm text-gray-500 mt-0.5">INTERVAL ARCADE RESULT</p>
+
+                <!-- Final Score Card -->
+                <div class="my-4 p-4 bg-amber-50 rounded-2xl border border-amber-200 max-w-xs mx-auto flex flex-col items-center justify-center shadow-inner">
+                    <span class="text-xs font-extrabold text-amber-800 uppercase tracking-widest">คะแนนรวมทั้งหมด</span>
+                    <div class="text-4xl sm:text-5xl font-black text-red-700 my-1">
+                        <span id="final-score">0</span> <span class="text-lg text-gray-400">PTS</span>
+                    </div>
+                    <span id="score-rank-badge" class="text-xs font-bold text-amber-900 bg-amber-200/80 px-3 py-1 rounded-full mt-1 border border-amber-300">
+                        ฉายา: กำลังประเมิน...
+                    </span>
+                </div>
+            </div>
+
+            <h3 class="font-bold text-gray-800 text-sm sm:text-base mb-2 flex items-center gap-2 border-b border-gray-200 pb-2">
+                <i class="fa-solid fa-list-check text-red-600"></i> รายละเอียดเฉลยคำตอบทั้ง 10 ข้อ:
+            </h3>
+
+            <!-- Detailed Answer Recap List -->
+            <div id="recap-list" class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-5 flex flex-col sm:flex-row gap-3 justify-center">
+                <button id="btn-restart" class="arcade-btn bg-red-600 hover:bg-red-700 text-white font-black text-base px-8 py-3.5 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> เล่นใหม่อีกครั้ง (PLAY AGAIN)
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="relative z-10 w-full text-center py-2.5 text-xs text-gray-500 bg-amber-50/80 border-t border-amber-200">
+        ดนตรีสากล - การสอนเรื่อง Interval • อัตราจังหวะ 4/4 (1 ห้องเพลง)
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC & AUDIO SYNTHESIZER -->
+    <script>
+        // Web Audio Context Synthesizer for Musical Notes and Arcade SFX
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Frequencies for Piano Notes
+        const noteFreqs = {
+            'C4': 261.63, 'C#4': 277.18, 'Db4': 277.18,
+            'D4': 293.66, 'Eb4': 311.13, 'E4': 329.63,
+            'F4': 349.23, 'F#4': 369.99, 'Gb4': 369.99,
+            'G4': 392.00, 'G#4': 415.30, 'Ab4': 415.30,
+            'A4': 440.00, 'Bb4': 466.16, 'B4': 493.88,
+            'C5': 523.25
+        };
+
+        // Play musical piano note tone
+        function playPianoTone(freq, startTime, duration) {
+            const ctx = getAudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            gain.gain.setValueAtTime(0.001, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.4, startTime + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        }
+
+        // Play Arcade SFX (Correct, Wrong, Combo, Click, Victory)
+        function playSFX(type) {
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                if (type === 'correct') {
+                    // Pleasant rising chime
+                    [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.08);
+                        osc.stop(now + idx * 0.08 + 0.25);
+                    });
+                } else if (type === 'wrong') {
+                    // Low error buzz
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'click') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'victory') {
+                    // Victory Fanfare
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.4);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.12);
+                        osc.stop(now + idx * 0.12 + 0.4);
+                    });
+                }
+            } catch(e) {
+                console.log("Audio SFX Error:", e);
+            }
+        }
+
+        /*
+           Treble Clef Y-Offset Reference (staffYTop = 42, line spacing = 10):
+           C5 = 15
+           B4 = 20
+           A4 = 25
+           G4 = 30
+           F4 = 35
+           E4 = 40
+           D4 = 45
+           C4 = 50 (Middle C - with ledger line)
+        */
+
+        const questionsData = [
+            {
+                id: 1,
+                intervalName: "คู่ 5 เพอร์เฟกต์ (Perfect 5th)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'quarter', yOffset: 50 },
+                    { name: 'E4', pitch: 'E4', durName: 'quarter', yOffset: 40 },
+                    { name: 'G4', pitch: 'G4', durName: 'half', yOffset: 30 }
+                ],
+                targetIndices: [0, 2], // C4 -> G4
+                options: [
+                    "คู่ 5 เพอร์เฟกต์ (Perfect 5th)",
+                    "คู่ 3 เมเจอร์ (Major 3rd)",
+                    "คู่ 4 เพอร์เฟกต์ (Perfect 4th)",
+                    "คู่ 8 เพอร์เฟกต์ (Perfect Octave)"
+                ],
+                correctIndex: 0,
+                explanation: "ระยะห่างจาก C4 ถึง G4 มีระยะห่าง 7 ครึ่งเสียง (5 ขั้นคู่เสียง) คือ คู่ 5 เพอร์เฟกต์ (Perfect 5th)"
+            },
+            {
+                id: 2,
+                intervalName: "คู่ 3 เมเจอร์ (Major 3rd)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'half', yOffset: 50 },
+                    { name: 'E4', pitch: 'E4', durName: 'half', yOffset: 40 }
+                ],
+                targetIndices: [0, 1], // C4 -> E4
+                options: [
+                    "คู่ 2 เมเจอร์ (Major 2nd)",
+                    "คู่ 3 ไมเนอร์ (Minor 3rd)",
+                    "คู่ 3 เมเจอร์ (Major 3rd)",
+                    "คู่ 4 เพอร์เฟกต์ (Perfect 4th)"
+                ],
+                correctIndex: 2,
+                explanation: "ระยะห่างจาก C4 ถึง E4 มีระยะห่าง 4 ครึ่งเสียง (3 ขั้นคู่เสียง) คือ คู่ 3 เมเจอร์ (Major 3rd)"
+            },
+            {
+                id: 3,
+                intervalName: "คู่ 4 เพอร์เฟกต์ (Perfect 4th)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'quarter', yOffset: 50 },
+                    { name: 'D4', pitch: 'D4', durName: 'quarter', yOffset: 45 },
+                    { name: 'F4', pitch: 'F4', durName: 'half', yOffset: 35 }
+                ],
+                targetIndices: [0, 2], // C4 -> F4
+                options: [
+                    "คู่ 3 เมเจอร์ (Major 3rd)",
+                    "คู่ 4 เพอร์เฟกต์ (Perfect 4th)",
+                    "คู่ 5 เพอร์เฟกต์ (Perfect 5th)",
+                    "คู่ 6 เมเจอร์ (Major 6th)"
+                ],
+                correctIndex: 1,
+                explanation: "ระยะห่างจาก C4 ถึง F4 มีระยะห่าง 5 ครึ่งเสียง (4 ขั้นคู่เสียง) คือ คู่ 4 เพอร์เฟกต์ (Perfect 4th)"
+            },
+            {
+                id: 4,
+                intervalName: "คู่ 2 เมเจอร์ (Major 2nd)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'half', yOffset: 50 },
+                    { name: 'D4', pitch: 'D4', durName: 'half', yOffset: 45 }
+                ],
+                targetIndices: [0, 1], // C4 -> D4
+                options: [
+                    "คู่ 1 เพอร์เฟกต์ (Unison)",
+                    "คู่ 2 ไมเนอร์ (Minor 2nd)",
+                    "คู่ 2 เมเจอร์ (Major 2nd)",
+                    "คู่ 3 เมเจอร์ (Major 3rd)"
+                ],
+                correctIndex: 2,
+                explanation: "ระยะห่างจาก C4 ถึง D4 มีระยะห่าง 2 ครึ่งเสียง (1 เสียงเต็ม) คือ คู่ 2 เมเจอร์ (Major 2nd)"
+            },
+            {
+                id: 5,
+                intervalName: "คู่ 8 เพอร์เฟกต์ (Perfect Octave)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'half', yOffset: 50 },
+                    { name: 'C5', pitch: 'C5', durName: 'half', yOffset: 15 }
+                ],
+                targetIndices: [0, 1], // C4 -> C5
+                options: [
+                    "คู่ 6 เมเจอร์ (Major 6th)",
+                    "คู่ 7 เมเจอร์ (Major 7th)",
+                    "คู่ 5 เพอร์เฟกต์ (Perfect 5th)",
+                    "คู่ 8 เพอร์เฟกต์ (Perfect Octave)"
+                ],
+                correctIndex: 3,
+                explanation: "ระยะห่างจาก C4 ถึง C5 คือระยะห่าง 12 ครึ่งเสียง (8 ขั้นคู่) เรียกว่า คู่ 8 เพอร์เฟกต์ (Perfect Octave)"
+            },
+            {
+                id: 6,
+                intervalName: "คู่ 3 ไมเนอร์ (Minor 3rd)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'quarter', yOffset: 50 },
+                    { name: 'E♭4', pitch: 'Eb4', durName: 'quarter', yOffset: 40, accidental: '♭' },
+                    { name: 'G4', pitch: 'G4', durName: 'half', yOffset: 30 }
+                ],
+                targetIndices: [0, 1], // C4 -> Eb4
+                options: [
+                    "คู่ 3 ไมเนอร์ (Minor 3rd)",
+                    "คู่ 3 เมเจอร์ (Major 3rd)",
+                    "คู่ 2 เมเจอร์ (Major 2nd)",
+                    "คู่ 4 เพอร์เฟกต์ (Perfect 4th)"
+                ],
+                correctIndex: 0,
+                explanation: "ระยะห่างจาก C4 ถึง E♭4 มีระยะห่าง 3 ครึ่งเสียง คือ คู่ 3 ไมเนอร์ (Minor 3rd)"
+            },
+            {
+                id: 7,
+                intervalName: "คู่ 6 เมเจอร์ (Major 6th)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'half', yOffset: 50 },
+                    { name: 'A4', pitch: 'A4', durName: 'half', yOffset: 25 }
+                ],
+                targetIndices: [0, 1], // C4 -> A4
+                options: [
+                    "คู่ 5 เพอร์เฟกต์ (Perfect 5th)",
+                    "คู่ 6 ไมเนอร์ (Minor 6th)",
+                    "คู่ 6 เมเจอร์ (Major 6th)",
+                    "คู่ 7 เมเจอร์ (Major 7th)"
+                ],
+                correctIndex: 2,
+                explanation: "ระยะห่างจาก C4 ถึง A4 มีระยะห่าง 9 ครึ่งเสียง (6 ขั้นคู่) คือ คู่ 6 เมเจอร์ (Major 6th)"
+            },
+            {
+                id: 8,
+                intervalName: "คู่ 7 เมเจอร์ (Major 7th)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'half', yOffset: 50 },
+                    { name: 'B4', pitch: 'B4', durName: 'half', yOffset: 20 }
+                ],
+                targetIndices: [0, 1], // C4 -> B4
+                options: [
+                    "คู่ 6 เมเจอร์ (Major 6th)",
+                    "คู่ 7 ไมเนอร์ (Minor 7th)",
+                    "คู่ 7 เมเจอร์ (Major 7th)",
+                    "คู่ 8 เพอร์เฟกต์ (Perfect Octave)"
+                ],
+                correctIndex: 2,
+                explanation: "ระยะห่างจาก C4 ถึง B4 มีระยะห่าง 11 ครึ่งเสียง คือ คู่ 7 เมเจอร์ (Major 7th)"
+            },
+            {
+                id: 9,
+                intervalName: "คู่ 5 ออกเมนเต็ด (Augmented 5th)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'half', yOffset: 50 },
+                    { name: 'G♯4', pitch: 'G#4', durName: 'half', yOffset: 30, accidental: '♯' }
+                ],
+                targetIndices: [0, 1], // C4 -> G#4
+                options: [
+                    "คู่ 5 เพอร์เฟกต์ (Perfect 5th)",
+                    "คู่ 5 ออกเมนเต็ด (Augmented 5th)",
+                    "คู่ 6 ไมเนอร์ (Minor 6th)",
+                    "คู่ 5 ดิมินิชด์ (Diminished 5th)"
+                ],
+                correctIndex: 1,
+                explanation: "ระยะห่างจาก C4 ถึง G♯4 ขยายกว้างกว่าคู่ 5 เพอร์เฟกต์อยู่ 1 ครึ่งเสียง (รวม 8 ครึ่งเสียง) คือ คู่ 5 ออกเมนเต็ด (Augmented 5th)"
+            },
+            {
+                id: 10,
+                intervalName: "คู่ 4 ออกเมนเต็ด (Augmented 4th)",
+                notes: [
+                    { name: 'C4', pitch: 'C4', durName: 'half', yOffset: 50 },
+                    { name: 'F♯4', pitch: 'F#4', durName: 'half', yOffset: 35, accidental: '♯' }
+                ],
+                targetIndices: [0, 1], // C4 -> F#4
+                options: [
+                    "คู่ 4 เพอร์เฟกต์ (Perfect 4th)",
+                    "คู่ 4 ออกเมนเต็ด (Augmented 4th)",
+                    "คู่ 5 ดิมินิชด์ (Diminished 5th)",
+                    "คู่ 3 เมเจอร์ (Major 3rd)"
+                ],
+                correctIndex: 1,
+                explanation: "ระยะห่างจาก C4 ถึง F♯4 เป็นระยะ 4 ขั้นคู่เสียงขยายกว้างขึ้น 1 ครึ่งเสียง (รวม 6 ครึ่งเสียง) คือ คู่ 4 ออกเมนเต็ด (Augmented 4th)"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let lives = 3;
+        let comboCount = 0;
+        let userAnswers = [];
+
+        // DOM Element References
+        const gameWrapper = document.getElementById('game-wrapper');
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const summaryScreen = document.getElementById('summary-screen');
+        
+        const btnStart = document.getElementById('btn-start');
+        const btnRestart = document.getElementById('btn-restart');
+        const btnPlaySound = document.getElementById('btn-play-sound');
+
+        const questionNumberEl = document.getElementById('question-number');
+        const currentScoreEl = document.getElementById('current-score');
+        const heartsContainer = document.getElementById('hearts-container');
+        const comboBadge = document.getElementById('combo-badge');
+        const comboCountEl = document.getElementById('combo-count');
+
+        const staffContainer = document.getElementById('staff-container');
+        const optionsGrid = document.getElementById('options-grid');
+        const mascotAvatar = document.getElementById('mascot-avatar');
+        const mascotSpeech = document.getElementById('mascot-speech');
+        const floatContainer = document.getElementById('float-container');
+
+        function updateHeartsUI() {
+            heartsContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement('span');
+                heart.className = i < lives ? 'text-red-500 scale-100 transition-transform' : 'text-gray-300 scale-90';
+                heart.innerHTML = i < lives ? '❤️' : '🖤';
+                heartsContainer.appendChild(heart);
+            }
+        }
+
+        function setMascotState(mood, text) {
+            mascotSpeech.textContent = text;
+            if (mood === 'happy') {
+                mascotAvatar.innerHTML = '😺';
+                mascotAvatar.className = 'w-11 h-11 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xl shadow-md shrink-0 border-2 border-emerald-200 animate-bounce';
+            } else if (mood === 'sad') {
+                mascotAvatar.innerHTML = '😿';
+                mascotAvatar.className = 'w-11 h-11 bg-red-700 text-white rounded-full flex items-center justify-center text-xl shadow-md shrink-0 border-2 border-red-300';
+            } else if (mood === 'fire') {
+                mascotAvatar.innerHTML = '😼';
+                mascotAvatar.className = 'w-11 h-11 bg-amber-600 text-white rounded-full flex items-center justify-center text-xl shadow-md shrink-0 border-2 border-amber-200 animate-pulse';
+            } else {
+                mascotAvatar.innerHTML = '🐱';
+                mascotAvatar.className = 'w-11 h-11 bg-red-700 text-white rounded-full flex items-center justify-center text-xl shadow-md shrink-0 border-2 border-amber-200';
+            }
+        }
+
+        function triggerFloatingText(text, colorClass = 'text-amber-500') {
+            const el = document.createElement('div');
+            el.className = `float-text font-black text-xl sm:text-2xl drop-shadow-md ${colorClass}`;
+            el.textContent = text;
+            floatContainer.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
+        function renderStaffSVG(question) {
+            const width = 560;
+            const height = 145;
+            const staffYTop = 42;
+            const lineSpacing = 10;
+
+            let svgHTML = `<svg viewBox="0 0 ${width} ${height}" class="w-full max-w-lg h-auto drop-shadow-sm select-none">`;
+
+            // Draw 5 Staff Lines
+            for (let i = 0; i < 5; i++) {
+                const y = staffYTop + (i * lineSpacing);
+                svgHTML += `<line x1="20" y1="${y}" x2="${width - 20}" y2="${y}" stroke="#78350f" stroke-width="1.5" stroke-opacity="0.6"/>`;
+            }
+
+            // Start & End Bar lines
+            svgHTML += `<line x1="20" y1="${staffYTop}" x2="20" y2="${staffYTop + 40}" stroke="#78350f" stroke-width="3"/>`;
+            svgHTML += `<line x1="${width - 20}" y1="${staffYTop}" x2="${width - 20}" y2="${staffYTop + 40}" stroke="#78350f" stroke-width="3"/>`;
+
+            // Treble Clef Symbol
+            svgHTML += `<text x="32" y="${staffYTop + 36}" fill="#78350f" font-family="serif" font-size="44" font-weight="bold">𝄞</text>`;
+
+            // 4/4 Time Signature
+            svgHTML += `
+                <text x="72" y="${staffYTop + 18}" fill="#92400e" font-family="Prompt, sans-serif" font-size="20" font-weight="900">4</text>
+                <text x="72" y="${staffYTop + 37}" fill="#92400e" font-family="Prompt, sans-serif" font-size="20" font-weight="900">4</text>
+            `;
+
+            const startX = 130;
+            const availableWidth = width - startX - 40;
+            const noteStep = availableWidth / question.notes.length;
+
+            // Render Notes on Staff
+            question.notes.forEach((note, index) => {
+                const x = startX + (index * noteStep) + (noteStep / 2);
+                const baseY = staffYTop + note.yOffset;
+
+                // Middle C Ledger Line
+                if (note.pitch === 'C4') {
+                    svgHTML += `<line x1="${x - 12}" y1="${baseY}" x2="${x + 12}" y2="${baseY}" stroke="#78350f" stroke-width="1.8"/>`;
+                }
+
+                // Accidental Symbol
+                if (note.accidental) {
+                    svgHTML += `<text x="${x - 18}" y="${baseY + 5}" fill="#b83232" font-size="18" font-weight="bold">${note.accidental}</text>`;
+                }
+
+                // Note Head
+                const isHalfNote = note.durName === 'half';
+                if (isHalfNote) {
+                    svgHTML += `<ellipse cx="${x}" cy="${baseY}" rx="6.5" ry="5" fill="#FAF7F2" stroke="#78350f" stroke-width="2.5" transform="rotate(-20 ${x} ${baseY})"/>`;
+                } else {
+                    svgHTML += `<ellipse cx="${x}" cy="${baseY}" rx="6.5" ry="5" fill="#78350f" transform="rotate(-20 ${x} ${baseY})"/>`;
+                }
+
+                // Stem Direction
+                const stemUp = note.yOffset > 20;
+                const stemX = stemUp ? x + 5.5 : x - 5.5;
+                const stemYEnd = stemUp ? baseY - 28 : baseY + 28;
+                svgHTML += `<line x1="${stemX}" y1="${baseY}" x2="${stemX}" y2="${stemYEnd}" stroke="#78350f" stroke-width="2"/>`;
+
+                // Note Name Label below
+                svgHTML += `<text x="${x}" y="${staffYTop + 64}" text-anchor="middle" fill="#92400e" font-size="12" font-weight="700">${note.name}</text>`;
+            });
+
+            // Target Interval Bracket accurately calculated between targetIndices
+            const targetStartIdx = question.targetIndices[0];
+            const targetEndIdx = question.targetIndices[1];
+            const x1 = startX + (targetStartIdx * noteStep) + (noteStep / 2);
+            const x2 = startX + (targetEndIdx * noteStep) + (noteStep / 2);
+            const bracketY = staffYTop - 12;
+
+            svgHTML += `
+                <path d="M ${x1} ${staffYTop - 4} L ${x1} ${bracketY} L ${x2} ${bracketY} L ${x2} ${staffYTop - 4}" 
+                      fill="none" stroke="#b83232" stroke-width="2" stroke-dasharray="3,3" />
+                <text x="${(x1 + x2) / 2}" y="${bracketY - 5}" text-anchor="middle" fill="#b83232" font-size="11" font-weight="bold">Interval Target</text>
+            `;
+
+            svgHTML += `</svg>`;
+            staffContainer.innerHTML = svgHTML;
+        }
+
+        function playQuestionAudio() {
+            const q = questionsData[currentQuestionIndex];
+            const ctx = getAudioContext();
+            let currentTime = ctx.currentTime + 0.1;
+
+            q.notes.forEach((note) => {
+                const freq = noteFreqs[note.pitch] || 261.63;
+                const duration = note.durName === 'half' ? 0.85 : 0.42;
+                playPianoTone(freq, currentTime, duration);
+                currentTime += duration + 0.08;
+            });
+        }
+
+        function loadQuestion(index) {
+            const q = questionsData[index];
+            
+            questionNumberEl.textContent = index + 1;
+            currentScoreEl.textContent = score;
+            updateHeartsUI();
+
+            // Update Combo Badge
+            if (comboCount >= 2) {
+                comboBadge.classList.remove('hidden');
+                comboBadge.classList.add('flex');
+                comboCountEl.textContent = comboCount;
+            } else {
+                comboBadge.classList.add('hidden');
+                comboBadge.classList.remove('flex');
+            }
+
+            renderStaffSVG(q);
+
+            optionsGrid.innerHTML = '';
+            q.options.forEach((optionText, optIndex) => {
+                const btn = document.createElement('button');
+                btn.className = `option-btn bg-white hover:bg-amber-50 text-gray-800 font-bold p-3.5 sm:p-4 rounded-xl border-2 border-amber-200 
+                                 text-left flex items-center justify-between text-xs sm:text-sm group`;
+                
+                btn.innerHTML = `
+                    <span class="flex items-center gap-2.5">
+                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center text-xs font-black group-hover:bg-red-600 group-hover:text-white transition">
+                            ${String.fromCharCode(65 + optIndex)}
+                        </span>
+                        <span>${optionText}</span>
+                    </span>
+                    <i class="fa-solid fa-circle-chevron-right opacity-30 group-hover:opacity-100 text-red-600 transition"></i>
+                `;
+
+                btn.addEventListener('click', () => {
+                    playSFX('click');
+                    handleAnswer(optIndex, btn);
+                });
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedIndex, clickedBtn) {
+            const q = questionsData[currentQuestionIndex];
+            const isCorrect = selectedIndex === q.correctIndex;
+
+            // Disable all option buttons during transition
+            const allBtns = optionsGrid.querySelectorAll('button');
+            allBtns.forEach(b => b.style.pointerEvents = 'none');
+
+            if (isCorrect) {
+                comboCount++;
+                const comboBonus = comboCount >= 2 ? comboCount * 20 : 0;
+                const earnedPts = 100 + comboBonus;
+                score += earnedPts;
+
+                clickedBtn.classList.remove('bg-white', 'border-amber-200');
+                clickedBtn.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900');
+
+                playSFX('correct');
+                
+                if (comboCount >= 2) {
+                    setMascotState('fire', `สุดยอดมาก! COMBO x${comboCount} แล้ว! 🔥`);
+                    triggerFloatingText(`+${earnedPts} PTS! (Combo x${comboCount})`, 'text-emerald-600');
+                } else {
+                    setMascotState('happy', 'เก่งมาก! ตอบถูกต้องแล้วครับ! ✨');
+                    triggerFloatingText(`+${earnedPts} PTS!`, 'text-emerald-600');
+                }
+            } else {
+                comboCount = 0;
+                lives--;
+
+                clickedBtn.classList.remove('bg-white', 'border-amber-200');
+                clickedBtn.classList.add('bg-red-100', 'border-red-500', 'text-red-900');
+
+                // Highlight correct button
+                allBtns[q.correctIndex].classList.add('bg-emerald-50', 'border-emerald-400');
+
+                playSFX('wrong');
+                gameWrapper.classList.add('shake-screen');
+                setTimeout(() => gameWrapper.classList.remove('shake-screen'), 400);
+
+                setMascotState('sad', 'เสียใจด้วยนะข้อนี้! ค่อยๆ วิเคราะห์อีกที!');
+                triggerFloatingText('-1 ❤️', 'text-red-600');
+            }
+
+            // Record log for review
+            userAnswers.push({
+                questionId: q.id,
+                intervalName: q.intervalName,
+                userChoice: q.options[selectedIndex],
+                correctChoice: q.options[q.correctIndex],
+                isCorrect: isCorrect,
+                explanation: q.explanation
+            });
+
+            // Transition to next question or summary
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questionsData.length && lives > 0) {
+                    setMascotState('idle', 'พร้อมสำหรับข้อต่อไปหรือยัง?');
+                    loadQuestion(currentQuestionIndex);
+                } else {
+                    showSummary();
+                }
+            }, 1200);
+        }
+
+        function showSummary() {
+            gameScreen.classList.add('hidden');
+            gameScreen.classList.remove('flex');
+            summaryScreen.classList.remove('hidden');
+
+            playSFX('victory');
+
+            document.getElementById('final-score').textContent = score;
+
+            const hankoStamp = document.getElementById('hanko-result-stamp');
+            const rankBadge = document.getElementById('score-rank-badge');
+            const starContainer = document.getElementById('star-rating');
+            const summaryTitle = document.getElementById('summary-title');
+
+            const correctCount = userAnswers.filter(a => a.isCorrect).length;
+
+            if (correctCount >= 8) {
+                hankoStamp.textContent = "ผ่านเกณฑ์";
+                hankoStamp.className = "hanko-stamp w-20 h-20 text-sm sm:text-base mb-2 mx-auto";
+                rankBadge.textContent = "ฉายา: ปรมาจารย์ซามูไรโน้ต (Interval Master)";
+                summaryTitle.textContent = "ภารกิจสำเร็จงดงาม!";
+                starContainer.innerHTML = '<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>';
+            } else if (correctCount >= 5) {
+                hankoStamp.textContent = "เรียบร้อย";
+                hankoStamp.className = "hanko-stamp w-20 h-20 text-sm sm:text-base mb-2 mx-auto text-amber-600 border-amber-600";
+                rankBadge.textContent = "ฉายา: จอมยุทธ์ดนตรีขั้นกลาง (Music Ronin)";
+                summaryTitle.textContent = "ผ่านการทดสอบแล้ว!";
+                starContainer.innerHTML = '<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-amber-200"></i>';
+            } else {
+                hankoStamp.textContent = "พยายามใหม่";
+                hankoStamp.className = "hanko-stamp w-20 h-20 text-xs sm:text-sm mb-2 mx-auto text-gray-500 border-gray-500";
+                rankBadge.textContent = "ฉายา: ศิษย์ฝึกหัดโน้ต (Music Apprentice)";
+                summaryTitle.textContent = "ฝึกซ้อมเพิ่มเติมอีกนิด!";
+                starContainer.innerHTML = '<i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-amber-200"></i><i class="fa-regular fa-star text-amber-200"></i>';
+            }
+
+            // Render detailed recap list
+            const recapList = document.getElementById('recap-list');
+            recapList.innerHTML = '';
+
+            userAnswers.forEach((ans, idx) => {
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-xl border text-xs sm:text-sm ${
+                    ans.isCorrect ? 'bg-emerald-50/80 border-emerald-200' : 'bg-red-50/80 border-red-200'
+                }`;
+
+                item.innerHTML = `
+                    <div class="flex items-start justify-between gap-2 mb-1">
+                        <div class="font-bold text-gray-800">
+                            ข้อที่ ${idx + 1}: ${ans.intervalName}
+                        </div>
+                        <span class="font-black px-2 py-0.5 rounded text-[11px] ${
+                            ans.isCorrect ? 'bg-emerald-200 text-emerald-800' : 'bg-red-200 text-red-800'
+                        }">
+                            ${ans.isCorrect ? '✓ ตอบถูก' : '✗ ตอบผิด'}
+                        </span>
+                    </div>
+                    <div class="text-gray-600 text-xs mb-1">
+                        <b>คำตอบของคุณ:</b> ${ans.userChoice} <br>
+                        ${!ans.isCorrect ? `<b class="text-emerald-700">คำตอบที่ถูกต้อง:</b> ${ans.correctChoice}` : ''}
+                    </div>
+                    <div class="text-gray-500 text-[11px] bg-white/90 p-2 rounded border border-gray-200 mt-1 italic">
+                        💡 <b>อธิบายเพิ่มเติม:</b> ${ans.explanation}
+                    </div>
+                `;
+                recapList.appendChild(item);
+            });
+        }
+
+        btnStart.addEventListener('click', () => {
+            getAudioContext();
+            playSFX('click');
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            gameScreen.classList.add('flex');
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            lives = 3;
+            comboCount = 0;
+            userAnswers = [];
+            setMascotState('idle', 'พร้อมแล้ว! เริ่มจากข้อที่ 1 กันเลย!');
+            loadQuestion(currentQuestionIndex);
+        });
+
+        btnRestart.addEventListener('click', () => {
+            playSFX('click');
+            summaryScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        });
+
+        btnPlaySound.addEventListener('click', () => {
+            playSFX('click');
+            playQuestionAudio();
+        });
+
+        // Background Falling Sakura Petals Canvas
+        function initSakuraAnimation() {
+            const canvas = document.getElementById('sakura-canvas');
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            const petals = Array.from({ length: 22 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 6 + 4,
+                speedY: Math.random() * 1.0 + 0.4,
+                speedX: Math.random() * 0.6 - 0.3,
+                angle: Math.random() * 360,
+                spin: Math.random() * 2 - 1
+            }));
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                petals.forEach(p => {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.angle * Math.PI) / 180);
+                    ctx.fillStyle = 'rgba(225, 140, 150, 0.4)';
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.bezierCurveTo(-p.size, -p.size, -p.size * 1.5, p.size / 2, 0, p.size * 1.3);
+                    ctx.bezierCurveTo(p.size * 1.5, p.size / 2, p.size, -p.size, 0, 0);
+                    ctx.fill();
+                    ctx.restore();
+
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.angle += p.spin;
+
+                    if (p.y > canvas.height) {
+                        p.y = -20;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+                requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        window.onload = function() {
+            initSakuraAnimation();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Rhythm: C Major Scale & 4/4 Rhythm Matrix</title>
+    
+    <!-- External CSS Framework & Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #030712;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .font-rajdhani {
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        /* Neon & Cyber Glow Effects */
+        .glow-cyan {
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.8), 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+        
+        .glow-pink {
+            text-shadow: 0 0 10px rgba(236, 72, 153, 0.8), 0 0 20px rgba(236, 72, 153, 0.5);
+        }
+
+        .cyber-panel {
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.15), inset 0 0 15px rgba(6, 182, 212, 0.08);
+            backdrop-filter: blur(12px);
+        }
+
+        .cyber-border {
+            clip-path: polygon(
+                0 0, 
+                calc(100% - 16px) 0, 
+                100% 16px, 
+                100% 100%, 
+                16px 100%, 
+                0 calc(100% - 16px)
+            );
+        }
+
+        /* Music Stave Styling */
+        .stave-line {
+            stroke: rgba(56, 189, 248, 0.45);
+            stroke-width: 2;
+        }
+
+        .beat-marker {
+            stroke: rgba(236, 72, 153, 0.45);
+            stroke-width: 1.5;
+            stroke-dasharray: 4 4;
+        }
+
+        /* Starfield Background Canvas */
+        #cyberCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-2 sm:p-4 relative">
+
+    <!-- Canvas สำหรับพื้นหลัง Grid อนาคต -->
+    <canvas id="cyberCanvas"></canvas>
+
+    <!-- UI Container หลักแบบ Cyberpunk HUD -->
+    <main class="relative z-10 w-full max-w-4xl cyber-panel cyber-border p-4 sm:p-6 min-h-[640px] flex flex-col justify-between">
+
+        <!-- Header: โลโก้ และ สถานะคะแนน -->
+        <header class="flex flex-wrap justify-between items-center border-b border-cyan-500/30 pb-4 mb-3 gap-2">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-cyan-950 border border-cyan-400/50 flex items-center justify-center text-2xl shadow-[0_0_12px_rgba(6,182,212,0.5)]">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black glow-cyan bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-500 font-orbitron tracking-widest uppercase">
+                        CYBER RHYTHM
+                    </h1>
+                    <p class="text-xs text-cyan-300 font-rajdhani font-semibold tracking-wider">C MAJOR SCALE & 4/4 RHYTHM MATRIX • โลกอนาคต</p>
+                </div>
+            </div>
+
+            <!-- กล่องคะแนนและด่าน -->
+            <div id="gameStats" class="flex gap-3 text-sm sm:text-base font-orbitron">
+                <div class="bg-slate-950/80 border border-cyan-500/40 px-3.5 py-1.5 rounded-lg text-center shadow-inner">
+                    <span class="text-[10px] text-cyan-400 block uppercase tracking-wider font-rajdhani">SEQUENCE</span>
+                    <span id="levelDisplay" class="font-bold text-cyan-300">1 / 10</span>
+                </div>
+                <div class="bg-slate-950/80 border border-fuchsia-500/40 px-3.5 py-1.5 rounded-lg text-center shadow-inner">
+                    <span class="text-[10px] text-fuchsia-400 block uppercase tracking-wider font-rajdhani">DATA SCORE</span>
+                    <span id="scoreDisplay" class="font-bold text-yellow-400">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- SCREEN 1: หน้าต้อนรับและคำสั่งเริ่มเกม -->
+        <section id="startScreen" class="flex flex-col items-center justify-center text-center py-4 space-y-5">
+            <div class="max-w-xl space-y-2">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-cyan-300 font-orbitron glow-cyan">
+                    SYSTEM READY: C MAJOR MATRIX ⚙️
+                </h2>
+                <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                    เข้าสู่ระบบฝึกทักษะโน้ตในสเกล <b>C Major (C4 - C5 / โด-เร-มี-ฟา-ซอล-ลา-ที-โด)</b> และอัตราจังหวะ <b>4/4</b> จำนวน 10 โจทย์
+                    ฟังเคาะสัญญาณเมโทรนอมเตรียมตัว 4 จังหวะ แล้วกด <kbd class="px-2 py-1 bg-cyan-950 rounded border border-cyan-400 text-yellow-300 font-mono text-xs shadow">Spacebar</kbd> ให้ตรงกับหัวโน้ตเมื่อสแกนเนอร์วิ่งผ่าน!
+                </p>
+            </div>
+
+            <!-- คู่มือโน้ต C Major Scale & ค่าโน้ต -->
+            <div class="w-full max-w-3xl space-y-3">
+                <h3 class="text-xs font-bold text-fuchsia-400 uppercase tracking-widest font-rajdhani">C Major Scale Reference (C4 - C5)</h3>
+                
+                <div class="grid grid-cols-4 sm:grid-cols-8 gap-1.5 text-center text-xs">
+                    <div class="bg-slate-950/80 p-2 rounded border border-cyan-500/30">
+                        <span class="font-bold text-cyan-300 font-orbitron block">C4</span>
+                        <span class="text-[10px] text-slate-400">โด (Do)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2 rounded border border-cyan-500/30">
+                        <span class="font-bold text-cyan-300 font-orbitron block">D4</span>
+                        <span class="text-[10px] text-slate-400">เร (Re)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2 rounded border border-cyan-500/30">
+                        <span class="font-bold text-cyan-300 font-orbitron block">E4</span>
+                        <span class="text-[10px] text-slate-400">มี (Mi)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2 rounded border border-cyan-500/30">
+                        <span class="font-bold text-cyan-300 font-orbitron block">F4</span>
+                        <span class="text-[10px] text-slate-400">ฟา (Fa)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2 rounded border border-cyan-500/30">
+                        <span class="font-bold text-cyan-300 font-orbitron block">G4</span>
+                        <span class="text-[10px] text-slate-400">ซอล (Sol)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2 rounded border border-cyan-500/30">
+                        <span class="font-bold text-cyan-300 font-orbitron block">A4</span>
+                        <span class="text-[10px] text-slate-400">ลา (La)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2 rounded border border-cyan-500/30">
+                        <span class="font-bold text-cyan-300 font-orbitron block">B4</span>
+                        <span class="text-[10px] text-slate-400">ที (Ti)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-2 rounded border border-fuchsia-500/50 bg-fuchsia-950/20">
+                        <span class="font-bold text-fuchsia-300 font-orbitron block">C5</span>
+                        <span class="text-[10px] text-slate-400">โดสูง (Do')</span>
+                    </div>
+                </div>
+
+                <!-- ตารางเรียนรู้ค่าโน้ตย่อ -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-slate-950/50 p-3 rounded-xl border border-indigo-500/30 text-xs">
+                    <div class="flex flex-col items-center bg-slate-900/80 p-2 rounded border border-slate-700">
+                        <span class="text-xl text-cyan-300 font-orbitron">𝄽</span>
+                        <span class="font-semibold text-cyan-200">ตัวกลม</span>
+                        <span class="text-slate-400 text-[10px]">4 จังหวะ</span>
+                    </div>
+                    <div class="flex flex-col items-center bg-slate-900/80 p-2 rounded border border-slate-700">
+                        <span class="text-xl text-cyan-300 font-orbitron">𝄲</span>
+                        <span class="font-semibold text-cyan-200">ตัวขาว</span>
+                        <span class="text-slate-400 text-[10px]">2 จังหวะ</span>
+                    </div>
+                    <div class="flex flex-col items-center bg-slate-900/80 p-2 rounded border border-slate-700">
+                        <span class="text-xl text-cyan-300 font-orbitron">♩</span>
+                        <span class="font-semibold text-cyan-200">ตัวดำ</span>
+                        <span class="text-slate-400 text-[10px]">1 จังหวะ</span>
+                    </div>
+                    <div class="flex flex-col items-center bg-slate-900/80 p-2 rounded border border-slate-700">
+                        <span class="text-xl text-cyan-300 font-orbitron">♪</span>
+                        <span class="font-semibold text-cyan-200">เขบ็ต 1 ชั้น</span>
+                        <span class="text-slate-400 text-[10px]">0.5 จังหวะ</span>
+                    </div>
+                    <div class="flex flex-col items-center bg-slate-900/80 p-2 rounded border border-amber-500/40 col-span-2 sm:col-span-1">
+                        <span class="text-xl text-amber-400 font-orbitron">𝄽</span>
+                        <span class="font-semibold text-amber-300">ตัวหยุด</span>
+                        <span class="text-slate-400 text-[10px]">ห้ามกด!</span>
+                    </div>
+                </div>
+            </div>
+
+            <button id="startBtn" onclick="startGame()" class="mt-2 px-8 py-3.5 bg-gradient-to-r from-cyan-500 via-blue-600 to-fuchsia-600 hover:from-cyan-400 hover:to-fuchsia-500 text-white font-black font-orbitron text-base sm:text-lg rounded-none cyber-border shadow-lg hover:shadow-cyan-500/50 transform transition active:scale-95 tracking-widest flex items-center gap-2">
+                <span>⚡</span> INITIALIZE SYSTEM
+            </button>
+        </section>
+
+        <!-- SCREEN 2: หน้าจอการเล่นเกม (Stage Area) -->
+        <section id="gameplayScreen" class="hidden flex-col items-center justify-between flex-grow space-y-4">
+            
+            <!-- แถบแจ้งเตือนสถานะ / หัวข้อโจทย์ / นับถอยหลัง -->
+            <div class="w-full text-center min-h-[65px] flex flex-col items-center justify-center">
+                <div id="questionTitle" class="text-xs sm:text-sm text-cyan-400 font-orbitron tracking-wider">
+                    SEQUENCE #1: LOADING...
+                </div>
+                <div id="statusMessage" class="text-base sm:text-xl font-bold text-yellow-300 animate-pulse mt-0.5">
+                    เตรียมตัว... ฟังเคาะจังหวะ!
+                </div>
+                <div id="countdownBox" class="text-3xl sm:text-4xl font-black text-cyan-400 font-orbitron mt-0.5 glow-cyan">
+                    4
+                </div>
+            </div>
+
+            <!-- พื้นที่แสดงบรรทัด 5 เส้น และการวิ่งของเคอร์เซอร์ -->
+            <div class="relative w-full bg-slate-950/90 rounded-xl border-2 border-cyan-500/40 p-2 sm:p-4 overflow-hidden h-64 flex items-center shadow-[inset_0_0_20px_rgba(6,182,212,0.15)]">
+                
+                <!-- SVG บรรทัด 5 เส้น และ โน้ต -->
+                <svg id="staveSvg" class="w-full h-full" viewBox="0 0 800 200" preserveAspectRatio="none">
+                    <!-- บรรทัด 5 เส้นถูกวาดด้วย JS -->
+                </svg>
+
+                <!-- ตัวนักบินอวกาศไซเบอร์ (เคอร์เซอร์วิ่ง) -->
+                <div id="astronautCursor" class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-none pointer-events-none z-20" style="left: 10%;">
+                    <div class="relative flex flex-col items-center">
+                        <!-- ไอคอนนักบินอวกาศไซเบอร์ -->
+                        <div class="w-12 h-12 bg-cyan-950/90 rounded-full border-2 border-cyan-400 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(6,182,212,0.8)] animate-pulse">
+                            🧑‍🚀
+                        </div>
+                        <!-- เส้นเลเซอร์แนวดิ่งชี้ตำแหน่งจังหวะ -->
+                        <div class="w-1 h-36 bg-gradient-to-b from-cyan-400 via-fuchsia-500 to-yellow-300 shadow-[0_0_12px_#06b6d4] mt-1"></div>
+                    </div>
+                </div>
+
+                <!-- เอฟเฟกต์ไฟกระพริบเมโทรนอม HUD -->
+                <div id="metronomeLight" class="absolute top-3 right-3 flex items-center gap-2 bg-slate-900/80 px-3 py-1 rounded border border-cyan-500/30">
+                    <span class="text-[10px] text-cyan-400 font-orbitron">PULSE</span>
+                    <div id="lightDot" class="w-3 h-3 rounded-full bg-slate-700 transition-colors duration-100"></div>
+                </div>
+            </div>
+
+            <!-- ปุ่มกดจังหวะสำหรับอุปกรณ์หน้าจอมุมมองสัมผัส (Touch) -->
+            <div class="w-full flex flex-col items-center space-y-2">
+                <button id="tapBtn" onmousedown="handleInput(event)" ontouchstart="handleInput(event)" class="w-full max-w-md py-4 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 active:from-fuchsia-500 active:to-cyan-500 rounded-none cyber-border text-lg sm:text-xl font-black text-white shadow-[0_0_20px_rgba(217,70,239,0.3)] border border-fuchsia-400/50 transition transform active:scale-95 flex items-center justify-center gap-2 font-orbitron">
+                    🎯 TAP HERE OR PRESS SPACEBAR
+                </button>
+                <span class="text-xs text-slate-400">คำแนะนำ: กด Spacebar หรือแตะปุ่มเมื่อเส้นสแกนเนอร์วิ่งตรงหัวโน้ต!</span>
+            </div>
+
+        </section>
+
+        <!-- SCREEN 3: แสดงเฉลยรายข้อ (Stage Summary Modal) -->
+        <div id="reviewModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+            <div class="bg-slate-950 border border-cyan-500/80 rounded-xl p-5 sm:p-6 max-w-xl w-full text-center space-y-4 cyber-panel cyber-border">
+                <h3 class="text-xl sm:text-2xl font-black text-cyan-300 font-orbitron glow-cyan">
+                    SEQUENCE <span id="reviewLevelNum">1</span> ANALYSIS
+                </h3>
+                <p id="reviewPitchText" class="text-xs text-fuchsia-300 font-rajdhani font-semibold">
+                    C Major Scale Pitch Pattern
+                </p>
+                
+                <!-- SVG แสดงเฉลยถูก/ผิด -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 h-48 flex items-center justify-center relative shadow-inner">
+                    <svg id="reviewSvg" class="w-full h-full" viewBox="0 0 800 200" preserveAspectRatio="none"></svg>
+                </div>
+
+                <!-- คำอธิบายสัญลักษณ์สีเฉลย -->
+                <div class="text-xs text-slate-300 flex flex-wrap justify-center gap-4">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-green-500 rounded-full inline-block shadow-[0_0_8px_#22c55e]"></span> กดถูกต้อง (Hit)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-red-500 rounded-full inline-block shadow-[0_0_8px_#ef4444]"></span> กดผิด/พลาด (Miss)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-amber-400 rounded-full inline-block shadow-[0_0_8px_#fbbf24]"></span> ตัวหยุดถูกต้อง (Rest)</span>
+                </div>
+
+                <div id="reviewScoreText" class="text-base sm:text-lg font-extrabold text-yellow-400 font-orbitron">
+                    STAGE SCORE: +40 DATA UNITS
+                </div>
+
+                <button onclick="nextQuestion()" class="px-8 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold font-orbitron rounded-none cyber-border transition shadow-lg">
+                    NEXT SEQUENCE ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: สรุปผลคะแนนรวม (Final Result Screen) -->
+        <section id="resultScreen" class="hidden flex-col items-center justify-center text-center py-6 space-y-6">
+            <div class="space-y-2">
+                <span class="text-5xl">🏆</span>
+                <h2 class="text-2xl sm:text-3xl font-black text-cyan-300 font-orbitron glow-cyan">MISSION ACCOMPLISHED!</h2>
+                <p class="text-slate-300 text-sm">ทดสอบทักษะโน้ต C Major Scale และอัตราจังหวะ 4/4 ครบทั้ง 10 โจทย์เรียบร้อยแล้ว</p>
+            </div>
+
+            <!-- การ์ดแสดงคะแนนรวม -->
+            <div class="bg-slate-950/90 border border-cyan-500/50 p-6 rounded-xl w-full max-w-md space-y-4 cyber-panel cyber-border">
+                <div>
+                    <span class="text-xs text-cyan-400 block uppercase tracking-wider font-rajdhani font-bold">TOTAL C-MAJOR RHYTHM SCORE</span>
+                    <span id="finalScore" class="text-5xl font-black text-yellow-400 font-orbitron glow-cyan">0</span>
+                    <span class="text-xs text-slate-400 block mt-1 font-orbitron">MAXIMUM SCORE: <span id="maxScore">100</span> UNITS</span>
+                </div>
+
+                <div id="gradeBadge" class="inline-block px-4 py-2 bg-cyan-950 border border-cyan-400 rounded text-xs sm:text-sm font-bold text-cyan-300 font-orbitron shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+                    RANK: CYBER CADET
+                </div>
+            </div>
+
+            <button onclick="restartGame()" class="px-8 py-3 bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-600 hover:from-fuchsia-400 hover:to-cyan-500 text-white font-black font-orbitron text-lg rounded-none cyber-border shadow-lg transform transition active:scale-95">
+                🔄 RESTART MATRIX
+            </button>
+        </section>
+
+        <!-- Footer -->
+        <footer class="mt-3 pt-2 border-t border-cyan-500/20 text-center text-[11px] text-cyan-400 font-rajdhani font-semibold">
+            CYBER RHYTHM MATRIX • C MAJOR SCALE (C4-C5) & 4/4 TIME SIGNATURE
+        </footer>
+    </main>
+
+    <script>
+        /* ===================================================================
+           1. C MAJOR SCALE FREQUENCIES & 10 DISTINCT QUESTIONS (4/4 TIME)
+           =================================================================== */
+        // C Major Scale Frequencies in Hz (Middle C4 to High C5)
+        const NOTE_PITCHES = {
+            'C4': 261.63, // โด (Middle C)
+            'D4': 293.66, // เร
+            'E4': 329.63, // มี
+            'F4': 349.23, // ฟา
+            'G4': 392.00, // ซอล
+            'A4': 440.00, // ลา
+            'B4': 493.88, // ที
+            'C5': 523.25  // โดสูง
+        };
+
+        // Pitch positions relative to staff line Y offset
+        // Treble staff lines from bottom to top: E4 (line 1), G4 (line 2), B4 (line 3), D5 (line 4), F5 (line 5)
+        // Stave Center Y = 100, Step height = 6px
+        const PITCH_OFFSETS = {
+            'C5': -6,   // 3rd Space (y = 94)
+            'B4': 0,    // 3rd Line (y = 100)
+            'A4': 6,    // 2nd Space (y = 106)
+            'G4': 12,   // 2nd Line (y = 112)
+            'F4': 18,   // 1st Space (y = 118)
+            'E4': 24,   // 1st Line (y = 124)
+            'D4': 30,   // Space below 1st line (y = 130)
+            'C4': 36    // Ledger line below staff (y = 136)
+        };
+
+        const BPM = 55; // ปรับลดความเร็วจาก 75 เหลือ 55 BPM เพื่อให้จังหวะช้าลงและเล่นง่ายขึ้น
+        const BEAT_DURATION = 60 / BPM; // ประมาณ 1.09 วินาทีต่อจังหวะ
+        const BAR_DURATION = BEAT_DURATION * 4; // รวมประมาณ 4.36 วินาทีต่อห้อง 4/4
+
+        // 10 Distinct C Major Scale Questions (Each exactly 4 beats)
+        const QUESTIONS = [
+            {
+                id: 1,
+                title: "1. โด-เร-มี-ฟา (C4, D4, E4, F4 - โน้ตตัวดำ)",
+                pitchDesc: "C4 ➔ D4 ➔ E4 ➔ F4",
+                notes: [
+                    { beat: 0, type: 'quarter', pitch: 'C4', duration: 1 },
+                    { beat: 1, type: 'quarter', pitch: 'D4', duration: 1 },
+                    { beat: 2, type: 'quarter', pitch: 'E4', duration: 1 },
+                    { beat: 3, type: 'quarter', pitch: 'F4', duration: 1 }
+                ]
+            },
+            {
+                id: 2,
+                title: "2. ซอล-ลา-ที-โดสูง (G4, A4, B4, C5 - โน้ตตัวดำ)",
+                pitchDesc: "G4 ➔ A4 ➔ B4 ➔ C5",
+                notes: [
+                    { beat: 0, type: 'quarter', pitch: 'G4', duration: 1 },
+                    { beat: 1, type: 'quarter', pitch: 'A4', duration: 1 },
+                    { beat: 2, type: 'quarter', pitch: 'B4', duration: 1 },
+                    { beat: 3, type: 'quarter', pitch: 'C5', duration: 1 }
+                ]
+            },
+            {
+                id: 3,
+                title: "3. โดกลาง & ซอล (C4, G4 - โน้ตตัวขาวลากยาว 2 จังหวะ)",
+                pitchDesc: "C4 (2 จังหวะ) ➔ G4 (2 จังหวะ)",
+                notes: [
+                    { beat: 0, type: 'half', pitch: 'C4', duration: 2 },
+                    { beat: 2, type: 'half', pitch: 'G4', duration: 2 }
+                ]
+            },
+            {
+                id: 4,
+                title: "4. มี-ฟา-ซอล (E4, F4 - ตัวดำ / G4 - ตัวขาว)",
+                pitchDesc: "E4 ➔ F4 ➔ G4 (ยาว)",
+                notes: [
+                    { beat: 0, type: 'quarter', pitch: 'E4', duration: 1 },
+                    { beat: 1, type: 'quarter', pitch: 'F4', duration: 1 },
+                    { beat: 2, type: 'half', pitch: 'G4', duration: 2 }
+                ]
+            },
+            {
+                id: 5,
+                title: "5. โดสูง C5 (โน้ตตัวกลม - ลากยาวเต็มห้อง 4 จังหวะ)",
+                pitchDesc: "C5 (ตัวกลม 4 จังหวะ)",
+                notes: [
+                    { beat: 0, type: 'whole', pitch: 'C5', duration: 4 }
+                ]
+            },
+            {
+                id: 6,
+                title: "6. ไต่สเกลขึ้น C Major (C4 ถึง C5 - เขบ็ต 1 ชั้น 8 ตัว)",
+                pitchDesc: "C4 ➔ D4 ➔ E4 ➔ F4 ➔ G4 ➔ A4 ➔ B4 ➔ C5",
+                notes: [
+                    { beat: 0, type: 'eighth', pitch: 'C4', duration: 0.5 },
+                    { beat: 0.5, type: 'eighth', pitch: 'D4', duration: 0.5 },
+                    { beat: 1, type: 'eighth', pitch: 'E4', duration: 0.5 },
+                    { beat: 1.5, type: 'eighth', pitch: 'F4', duration: 0.5 },
+                    { beat: 2, type: 'eighth', pitch: 'G4', duration: 0.5 },
+                    { beat: 2.5, type: 'eighth', pitch: 'A4', duration: 0.5 },
+                    { beat: 3, type: 'eighth', pitch: 'B4', duration: 0.5 },
+                    { beat: 3.5, type: 'eighth', pitch: 'C5', duration: 0.5 }
+                ]
+            },
+            {
+                id: 7,
+                title: "7. ไต่สเกลลง C Major (C5 ถึง C4 - เขบ็ต 1 ชั้น 8 ตัว)",
+                pitchDesc: "C5 ➔ B4 ➔ A4 ➔ G4 ➔ F4 ➔ E4 ➔ D4 ➔ C4",
+                notes: [
+                    { beat: 0, type: 'eighth', pitch: 'C5', duration: 0.5 },
+                    { beat: 0.5, type: 'eighth', pitch: 'B4', duration: 0.5 },
+                    { beat: 1, type: 'eighth', pitch: 'A4', duration: 0.5 },
+                    { beat: 1.5, type: 'eighth', pitch: 'G4', duration: 0.5 },
+                    { beat: 2, type: 'eighth', pitch: 'F4', duration: 0.5 },
+                    { beat: 2.5, type: 'eighth', pitch: 'E4', duration: 0.5 },
+                    { beat: 3, type: 'eighth', pitch: 'D4', duration: 0.5 },
+                    { beat: 3.5, type: 'eighth', pitch: 'C4', duration: 0.5 }
+                ]
+            },
+            {
+                id: 8,
+                title: "8. การเว้นจังหวะตัวหยุด (C4 - หยุด - G4 - C5)",
+                pitchDesc: "C4 ➔ [หยุด] ➔ G4 ➔ C5",
+                notes: [
+                    { beat: 0, type: 'quarter', pitch: 'C4', duration: 1 },
+                    { beat: 1, type: 'rest', pitch: 'G4', duration: 1 }, // ตัวหยุด
+                    { beat: 2, type: 'quarter', pitch: 'G4', duration: 1 },
+                    { beat: 3, type: 'quarter', pitch: 'C5', duration: 1 }
+                ]
+            },
+            {
+                id: 9,
+                title: "9. คอร์ดกระจาย C Major Arpeggio (C4, E4, G4, C5)",
+                pitchDesc: "C4-E4 (เขบ็ต) ➔ G4 (ตัวดำ) ➔ C5 (ตัวขาว)",
+                notes: [
+                    { beat: 0, type: 'eighth', pitch: 'C4', duration: 0.5 },
+                    { beat: 0.5, type: 'eighth', pitch: 'E4', duration: 0.5 },
+                    { beat: 1, type: 'quarter', pitch: 'G4', duration: 1 },
+                    { beat: 2, type: 'half', pitch: 'C5', duration: 2 }
+                ]
+            },
+            {
+                id: 10,
+                title: "10. ทำนองผสมผสานไซเบอร์ (มี - หยุด - ซอล-ลา - โดสูง)",
+                pitchDesc: "E4 ➔ [หยุด] ➔ G4-A4 ➔ C5",
+                notes: [
+                    { beat: 0, type: 'quarter', pitch: 'E4', duration: 1 },
+                    { beat: 1, type: 'rest', pitch: 'E4', duration: 1 },
+                    { beat: 2, type: 'eighth', pitch: 'G4', duration: 0.5 },
+                    { beat: 2.5, type: 'eighth', pitch: 'A4', duration: 0.5 },
+                    { beat: 3, type: 'quarter', pitch: 'C5', duration: 1 }
+                ]
+            }
+        ];
+
+        /* ===================================================================
+           2. STATE & GLOBAL VARIABLES
+           =================================================================== */
+        let currentQuestionIdx = 0;
+        let totalScore = 0;
+        let questionUserHits = []; 
+        let audioCtx = null;
+        let animationFrameId = null;
+        let isPlaying = false;
+        let startTime = 0;
+
+        /* ===================================================================
+           3. WEB AUDIO API SYNTH (เมโทรนอม & เสียงโน้ตตามความถี่ C Major)
+           =================================================================== */
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // เสียงเคาะเมโทรนอม
+        function playMetronomeSound(isAccent = false) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(isAccent ? 1400 : 800, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch (err) {
+                console.error("Audio playback error", err);
+            }
+        }
+
+        // เสียงสังเคราะห์ตามระดับเสียงโน้ต C Major
+        function playNotePitchSound(pitchName) {
+            if (!audioCtx) return;
+            try {
+                const freq = NOTE_PITCHES[pitchName] || 440;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'triangle'; // เสียงสังเคราะห์ไซเบอร์ฟลุต/เปียโน
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            } catch (err) {
+                console.error("Audio pitch error", err);
+            }
+        }
+
+        // เสียงเมื่อกดผิด หรือกดโดนตัวหยุด
+        function playMissSound() {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(130, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.18);
+            } catch (err) {
+                console.error("Audio error", err);
+            }
+        }
+
+        /* ===================================================================
+           4. GAME CONTROL & FLOW
+           =================================================================== */
+        function startGame() {
+            initAudio();
+            currentQuestionIdx = 0;
+            totalScore = 0;
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('gameplayScreen').classList.remove('hidden');
+            document.getElementById('gameplayScreen').classList.add('flex');
+            
+            loadQuestion(currentQuestionIdx);
+        }
+
+        function loadQuestion(idx) {
+            const q = QUESTIONS[idx];
+            document.getElementById('levelDisplay').innerText = `${idx + 1} / 10`;
+            document.getElementById('scoreDisplay').innerText = totalScore;
+            document.getElementById('questionTitle').innerText = q.title;
+            
+            // ล้างข้อมูลการกด
+            questionUserHits = q.notes.map(n => ({
+                ...n,
+                status: n.type === 'rest' ? 'untouched_rest' : 'missed',
+                hitTime: null
+            }));
+
+            // วาดบรรทัด 5 เส้นและโน้ต
+            renderStave('staveSvg', q.notes);
+
+            // เริ่มเคาะเมโทรนอมนับถอยหลัง 4 จังหวะ
+            startCountIn();
+        }
+
+        /* ===================================================================
+           5. COUNT-IN & ANIMATION LOOP
+           =================================================================== */
+        function startCountIn() {
+            isPlaying = false;
+            const statusMsg = document.getElementById('statusMessage');
+            const countdownBox = document.getElementById('countdownBox');
+            const light = document.getElementById('lightDot');
+
+            statusMsg.innerText = "เตรียมตัว... ฟังเคาะจังหวะ!";
+            countdownBox.innerText = "4";
+            
+            setCursorPosition(10); // จุดเริ่มต้นบรรทัดโน้ต (10%)
+
+            let count = 4;
+            const countInterval = setInterval(() => {
+                playMetronomeSound(count === 4);
+                
+                // ไฟกระพริบเมโทรนอม
+                light.classList.remove('bg-slate-700');
+                light.classList.add('bg-fuchsia-500');
+                setTimeout(() => {
+                    light.classList.remove('bg-fuchsia-500');
+                    light.classList.add('bg-slate-700');
+                }, 150);
+
+                countdownBox.innerText = count;
+                count--;
+
+                if (count < 0) {
+                    clearInterval(countInterval);
+                    countdownBox.innerText = "GO!";
+                    statusMsg.innerText = "กด SPACEBAR ตามจังหวะและระดับเสียง!";
+                    startMeasureRun();
+                }
+            }, BEAT_DURATION * 1000);
+        }
+
+        function startMeasureRun() {
+            isPlaying = true;
+            startTime = performance.now();
+            let lastBeatPlayed = -1;
+
+            function animate(now) {
+                const elapsed = (now - startTime) / 1000; 
+                const progress = elapsed / BAR_DURATION; 
+
+                const currentBeat = elapsed / BEAT_DURATION;
+
+                // เล่นเสียงเมโทรนอมในจังหวะ 0, 1, 2, 3
+                const floorBeat = Math.floor(currentBeat);
+                if (floorBeat > lastBeatPlayed && floorBeat < 4) {
+                    playMetronomeSound(floorBeat === 0);
+                    lastBeatPlayed = floorBeat;
+                    
+                    const light = document.getElementById('lightDot');
+                    light.classList.remove('bg-slate-700');
+                    light.classList.add('bg-cyan-400');
+                    setTimeout(() => {
+                        light.classList.remove('bg-cyan-400');
+                        light.classList.add('bg-slate-700');
+                    }, 150);
+                }
+
+                // เลื่อนนักบินอวกาศไซเบอร์ (จาก 10% ถึง 90% ของความกว้าง SVG)
+                const cursorX = 10 + progress * 80;
+                setCursorPosition(cursorX);
+
+                if (progress < 1.0) {
+                    animationFrameId = requestAnimationFrame(animate);
+                } else {
+                    isPlaying = false;
+                    setCursorPosition(90);
+                    setTimeout(evaluateStage, 350);
+                }
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function setCursorPosition(percent) {
+            const cursor = document.getElementById('astronautCursor');
+            cursor.style.left = `${percent}%`;
+        }
+
+        /* ===================================================================
+           6. INPUT HANDLING & ACCURACY EVALUATION
+           =================================================================== */
+        function handleInput(e) {
+            if (e) e.preventDefault();
+            if (!isPlaying) return;
+
+            const now = performance.now();
+            const elapsed = (now - startTime) / 1000;
+            const currentBeat = elapsed / BEAT_DURATION;
+
+            const tolerance = 0.32; // ช่วงเวลาความคลาดเคลื่อนยอมรับได้ (จังหวะ)
+            let hitFound = false;
+
+            questionUserHits.forEach(item => {
+                if (item.type === 'rest') {
+                    // หากกดตรงกับตัวหยุด -> หักคะแนน / ถือว่าผิด
+                    if (Math.abs(currentBeat - item.beat) < tolerance) {
+                        item.status = 'wrong_rest_hit';
+                        playMissSound();
+                        showHitFeedback("อย่ากดตัวหยุด! ❌", "text-red-400");
+                        hitFound = true;
+                    }
+                } else {
+                    // โน้ตปกติ
+                    const diff = Math.abs(currentBeat - item.beat);
+                    if (diff <= tolerance && item.status === 'missed') {
+                        item.status = 'hit';
+                        item.hitTime = currentBeat;
+                        
+                        // เล่นเสียงตามระดับโน้ต C Major!
+                        playNotePitchSound(item.pitch);
+                        
+                        if (diff < 0.14) {
+                            showHitFeedback(`PERFECT! (${item.pitch}) 🌟`, "text-green-400");
+                        } else {
+                            showHitFeedback(`GOOD! (${item.pitch}) 👍`, "text-cyan-300");
+                        }
+                        hitFound = true;
+                    }
+                }
+            });
+
+            if (!hitFound) {
+                playMissSound();
+                showHitFeedback("ผิดจังหวะ! ❌", "text-red-400");
+            }
+        }
+
+        // ฟังอีเวนต์การกด Spacebar
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                handleInput(e);
+            }
+        });
+
+        function showHitFeedback(text, colorClass) {
+            const statusMsg = document.getElementById('statusMessage');
+            statusMsg.innerText = text;
+            statusMsg.className = `text-base sm:text-xl font-black font-orbitron animate-bounce ${colorClass}`;
+        }
+
+        /* ===================================================================
+           7. EVALUATION & REVIEW MODAL
+           =================================================================== */
+        function evaluateStage() {
+            let stagePoints = 0;
+
+            questionUserHits.forEach(n => {
+                if (n.type !== 'rest') {
+                    if (n.status === 'hit') stagePoints += 10;
+                } else {
+                    // ตัวหยุดหากไม่ได้กด ถือว่าถูกต้อง ได้คะแนน
+                    if (n.status === 'untouched_rest') stagePoints += 10;
+                }
+            });
+
+            totalScore += stagePoints;
+            document.getElementById('scoreDisplay').innerText = totalScore;
+
+            // แสดง Modal เฉลยรายข้อ
+            const currentQ = QUESTIONS[currentQuestionIdx];
+            document.getElementById('reviewLevelNum').innerText = currentQuestionIdx + 1;
+            document.getElementById('reviewPitchText').innerText = `รูปแบบทำนอง: ${currentQ.pitchDesc}`;
+            document.getElementById('reviewScoreText').innerText = `STAGE SCORE: +${stagePoints} DATA UNITS`;
+            
+            renderStave('reviewSvg', questionUserHits, true);
+
+            document.getElementById('reviewModal').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            document.getElementById('reviewModal').classList.add('hidden');
+            currentQuestionIdx++;
+
+            if (currentQuestionIdx < QUESTIONS.length) {
+                loadQuestion(currentQuestionIdx);
+            } else {
+                showFinalResults();
+            }
+        }
+
+        function showFinalResults() {
+            document.getElementById('gameplayScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+            document.getElementById('resultScreen').classList.add('flex');
+
+            document.getElementById('finalScore').innerText = totalScore;
+            
+            const badge = document.getElementById('gradeBadge');
+            if (totalScore >= 90) {
+                badge.innerText = "RANK: ⚡ CYBER VIRTUOSO (ระดับ: ปรมาจารย์ไซเบอร์)";
+            } else if (totalScore >= 60) {
+                badge.innerText = "RANK: 👩‍🚀 NEON NAVIGATOR (ระดับ: นักบินจังหวะผู้เชี่ยวชาญ)";
+            } else {
+                badge.innerText = "RANK: 🛰️ SYNTH CADET (ระดับ: นักเรียนฝึกหัดไซเบอร์)";
+            }
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        /* ===================================================================
+           8. SVG STAVE & C MAJOR NOTE RENDERER
+           =================================================================== */
+        function renderStave(svgId, notes, isReview = false) {
+            const svg = document.getElementById(svgId);
+            svg.innerHTML = '';
+
+            const staveY = 100;
+            const lineSpacing = 12;
+
+            // 1. วาดบรรทัด 5 เส้น
+            for (let i = -2; i <= 2; i++) {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", "40");
+                line.setAttribute("y1", staveY + i * lineSpacing);
+                line.setAttribute("x2", "760");
+                line.setAttribute("y2", staveY + i * lineSpacing);
+                line.setAttribute("class", "stave-line");
+                svg.appendChild(line);
+            }
+
+            // 2. เส้นกั้นห้อง ปิดหัว-ท้าย
+            const startLine = createSvgLine(60, staveY - 2 * lineSpacing, 60, staveY + 2 * lineSpacing, "rgba(56, 189, 248, 0.7)", 3);
+            const endLine = createSvgLine(740, staveY - 2 * lineSpacing, 740, staveY + 2 * lineSpacing, "rgba(56, 189, 248, 0.7)", 3);
+            svg.appendChild(startLine);
+            svg.appendChild(endLine);
+
+            // 3. กุญแจซอล (Treble Clef Symbol Text) & Time Signature 4/4
+            const trebleClef = createSvgText("𝄞", 80, staveY + 16, "52px", "#38bdf8");
+            const timeSig1 = createSvgText("4", 110, staveY - 4, "26px", "#e0e7ff");
+            const timeSig2 = createSvgText("4", 110, staveY + 22, "26px", "#e0e7ff");
+            svg.appendChild(trebleClef);
+            svg.appendChild(timeSig1);
+            svg.appendChild(timeSig2);
+
+            // 4. เส้นประแสดงจังหวะ 1, 2, 3, 4
+            for (let b = 0; b < 4; b++) {
+                const x = 150 + b * (560 / 4);
+                const beatLine = createSvgLine(x, staveY - 2.8 * lineSpacing, x, staveY + 2.8 * lineSpacing, "rgba(236, 72, 153, 0.35)", 1.5, "4 4");
+                svg.appendChild(beatLine);
+
+                const beatNum = createSvgText((b + 1).toString(), x, staveY - 3.2 * lineSpacing, "11px", "#f472b6");
+                svg.appendChild(beatNum);
+            }
+
+            // 5. วาดตัวโน้ตแต่ละตัวตามระดับเสียง C Major
+            notes.forEach(note => {
+                const x = 150 + (note.beat / 4) * 560;
+                
+                // คำนวณความสูงตามระดับเสียง pitch (C4, D4, E4, F4, G4, A4, B4, C5)
+                const yOffset = PITCH_OFFSETS[note.pitch] !== undefined ? PITCH_OFFSETS[note.pitch] : 0;
+                const y = staveY + yOffset;
+
+                let color = "#ffffff";
+                if (isReview) {
+                    if (note.type === 'rest') {
+                        color = note.status === 'wrong_rest_hit' ? "#ef4444" : "#fbbf24";
+                    } else {
+                        color = note.status === 'hit' ? "#22c55e" : "#ef4444";
+                    }
+                }
+
+                drawNoteSymbol(svg, note.type, note.pitch, x, y, color);
+            });
+        }
+
+        function drawNoteSymbol(svg, type, pitch, x, y, color) {
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+            // Ledger Line สำหรับ C4 (Middle C)
+            if (pitch === 'C4' && type !== 'rest') {
+                const ledger = createSvgLine(x - 12, y, x + 12, y, color, 2);
+                g.appendChild(ledger);
+            }
+
+            if (type === 'whole') {
+                // โน้ตตัวกลม
+                const head = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+                head.setAttribute("cx", x);
+                head.setAttribute("cy", y);
+                head.setAttribute("rx", 9);
+                head.setAttribute("ry", 6.5);
+                head.setAttribute("fill", "none");
+                head.setAttribute("stroke", color);
+                head.setAttribute("stroke-width", "3");
+                head.setAttribute("transform", `rotate(-20 ${x} ${y})`);
+                g.appendChild(head);
+            } 
+            else if (type === 'half') {
+                // โน้ตตัวขาว
+                const head = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+                head.setAttribute("cx", x);
+                head.setAttribute("cy", y);
+                head.setAttribute("rx", 8);
+                head.setAttribute("ry", 5.5);
+                head.setAttribute("fill", "none");
+                head.setAttribute("stroke", color);
+                head.setAttribute("stroke-width", "3");
+                head.setAttribute("transform", `rotate(-20 ${x} ${y})`);
+                
+                const stem = createSvgLine(x + 7, y, x + 7, y - 30, color, 2.5);
+                g.appendChild(head);
+                g.appendChild(stem);
+            } 
+            else if (type === 'quarter') {
+                // โน้ตตัวดำ
+                const head = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+                head.setAttribute("cx", x);
+                head.setAttribute("cy", y);
+                head.setAttribute("rx", 8);
+                head.setAttribute("ry", 5.5);
+                head.setAttribute("fill", color);
+                head.setAttribute("transform", `rotate(-20 ${x} ${y})`);
+                
+                const stem = createSvgLine(x + 7, y, x + 7, y - 30, color, 2.5);
+                g.appendChild(head);
+                g.appendChild(stem);
+            } 
+            else if (type === 'eighth') {
+                // เขบ็ต 1 ชั้น
+                const head = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+                head.setAttribute("cx", x);
+                head.setAttribute("cy", y);
+                head.setAttribute("rx", 8);
+                head.setAttribute("ry", 5.5);
+                head.setAttribute("fill", color);
+                head.setAttribute("transform", `rotate(-20 ${x} ${y})`);
+                
+                const stem = createSvgLine(x + 7, y, x + 7, y - 30, color, 2.5);
+                
+                const flag = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                flag.setAttribute("d", `M ${x + 7} ${y - 30} Q ${x + 18} ${y - 18} ${x + 16} ${y - 8}`);
+                flag.setAttribute("fill", "none");
+                flag.setAttribute("stroke", color);
+                flag.setAttribute("stroke-width", "3");
+                
+                g.appendChild(head);
+                g.appendChild(stem);
+                g.appendChild(flag);
+            } 
+            else if (type === 'rest') {
+                // ตัวหยุดตัวดำ (สัญลักษณ์ซิกแซก)
+                const restText = createSvgText("𝄽", x, 100 + 10, "32px", color);
+                g.appendChild(restText);
+            }
+
+            // แสดงป้ายชื่อโน้ต (Do, Re, Mi, etc.) ใต้หัวโน้ต
+            if (type !== 'rest' && pitch) {
+                const labelText = createSvgText(pitch, x, y + 22, "10px", color);
+                g.appendChild(labelText);
+            }
+
+            svg.appendChild(g);
+        }
+
+        /* --- SVG Helpers --- */
+        function createSvgLine(x1, y1, x2, y2, stroke, strokeWidth, dashArray = null) {
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1);
+            line.setAttribute("y1", y1);
+            line.setAttribute("x2", x2);
+            line.setAttribute("y2", y2);
+            line.setAttribute("stroke", stroke);
+            line.setAttribute("stroke-width", strokeWidth);
+            if (dashArray) line.setAttribute("stroke-dasharray", dashArray);
+            return line;
+        }
+
+        function createSvgText(text, x, y, fontSize, fill) {
+            const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            txt.setAttribute("x", x);
+            txt.setAttribute("y", y);
+            txt.setAttribute("font-size", fontSize);
+            txt.setAttribute("fill", fill);
+            txt.setAttribute("text-anchor", "middle");
+            txt.setAttribute("font-weight", "bold");
+            txt.textContent = text;
+            return txt;
+        }
+
+        /* ===================================================================
+           9. CANVAS ANIMATED FUTURISTIC GRID BACKGROUND
+           =================================================================== */
+        function initCyberCanvas() {
+            const canvas = document.getElementById('cyberCanvas');
+            const ctx = canvas.getContext('2d');
+            let nodes = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                nodes = [];
+                for (let i = 0; i < 70; i++) {
+                    nodes.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        vx: (Math.random() - 0.5) * 0.6,
+                        vy: (Math.random() - 0.5) * 0.6,
+                        radius: Math.random() * 2 + 1
+                    });
+                }
+            }
+
+            function drawCyberGrid() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Dynamic background grid
+                ctx.strokeStyle = "rgba(6, 182, 212, 0.05)";
+                ctx.lineWidth = 1;
+                const gridSize = 40;
+                for (let x = 0; x < canvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+
+                // Connecting cyber particles
+                ctx.fillStyle = "rgba(6, 182, 212, 0.6)";
+                nodes.forEach((n, idx) => {
+                    n.x += n.vx;
+                    n.y += n.vy;
+
+                    if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+                    if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    for (let j = idx + 1; j < nodes.length; j++) {
+                        const n2 = nodes[j];
+                        const dist = Math.hypot(n.x - n2.x, n.y - n2.y);
+                        if (dist < 110) {
+                            ctx.strokeStyle = `rgba(217, 70, 239, ${0.25 * (1 - dist / 110)})`;
+                            ctx.beginPath();
+                            ctx.moveTo(n.x, n.y);
+                            ctx.lineTo(n2.x, n2.y);
+                            ctx.stroke();
+                        }
+                    }
+                });
+
+                requestAnimationFrame(drawCyberGrid);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            drawCyberGrid();
+        }
+
+        window.onload = function() {
+            initCyberCanvas();
+        };
+    </script>
+</body>
+</html>

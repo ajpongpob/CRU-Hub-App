@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-950 text-white font-sans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUSIC TIME MACHINE – ไทม์แมชชีนตะลุยกาลเวลาดนตรี</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        baroque: '#d97706',
+                        classical: '#2563eb',
+                        romantic: '#e11d48',
+                        jazz: '#7c3aed',
+                        modern: '#06b6d4',
+                    },
+                    fontFamily: {
+                        sans: ['Kanit', 'Prompt', 'Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                        'bounce-short': 'bounceShort 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.6))' },
+                            '50%': { filter: 'drop-shadow(0 0 25px rgba(236, 72, 153, 0.9))' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                        },
+                        bounceShort: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts for Thai Language -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 9999px; }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="h-full flex items-center justify-center bg-slate-950 overflow-hidden p-0 sm:p-4">
+
+    <div id="app-container" class="w-full h-full sm:max-w-md sm:h-[92vh] sm:rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl relative flex flex-col overflow-hidden">
+        
+        <!-- Header Bar -->
+        <header id="game-header" class="hidden bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between z-20 shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-400/50 flex items-center justify-center text-indigo-300 font-bold text-xs">
+                    ⏳
+                </div>
+                <div>
+                    <h1 class="text-xs font-bold text-slate-300 leading-tight">MUSIC TIME MACHINE</h1>
+                    <span id="current-era-title" class="text-xs text-indigo-400 font-semibold">แผนที่กาลเวลา</span>
+                </div>
+            </div>
+            <!-- Crystal Counter -->
+            <div class="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
+                <span class="text-cyan-400 text-sm animate-pulse">💎</span>
+                <span id="crystal-count-text" class="text-xs font-bold text-cyan-300">0/5</span>
+            </div>
+        </header>
+
+        <main id="screen-container" class="flex-1 relative overflow-y-auto overflow-x-hidden flex flex-col">
+            <!-- Dynamic Content injected via JS -->
+        </main>
+
+        <!-- Audio Player Visualizer Overlay Banner (For Level 1) -->
+        <div id="audio-banner" class="hidden absolute bottom-4 left-4 right-4 bg-slate-800/95 border border-indigo-500/50 rounded-2xl p-3 shadow-2xl z-30 flex items-center justify-between backdrop-blur-lg">
+            <div class="flex items-center gap-3">
+                <button id="btn-play-audio-sample" class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform text-lg">
+                    ▶️
+                </button>
+                <div>
+                    <p class="text-xs text-indigo-300 font-bold">เสียงตัวอย่างประวัติศาสตร์</p>
+                    <p id="audio-status-text" class="text-xs text-slate-400">กดปุ่มเพื่อฟังเสียงดนตรี</p>
+                </div>
+            </div>
+            <div class="flex gap-1 items-end h-6 pr-2">
+                <div class="w-1 bg-indigo-500 rounded-full h-2 animate-bounce"></div>
+                <div class="w-1 bg-purple-500 rounded-full h-5 animate-bounce [animation-delay:0.2s]"></div>
+                <div class="w-1 bg-pink-500 rounded-full h-3 animate-bounce [animation-delay:0.4s]"></div>
+                <div class="w-1 bg-cyan-500 rounded-full h-6 animate-bounce [animation-delay:0.1s]"></div>
+            </div>
+        </div>
+
+        <!-- How to Play Modal -->
+        <div id="modal-how-to-play" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 p-6 flex flex-col justify-between">
+            <div class="overflow-y-auto pr-1 space-y-4">
+                <div class="text-center">
+                    <span class="text-4xl">🕰️</span>
+                    <h2 class="text-xl font-bold text-indigo-300 mt-2">วิธีเล่นเกม</h2>
+                    <p class="text-xs text-slate-400">คู่มือไทม์แมชชีนตะลุยกาลเวลาดนตรี</p>
+                </div>
+                <div class="space-y-3 text-xs text-slate-300">
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700">
+                        <strong class="text-amber-400 block mb-1">1. ยุค Baroque (ฟังแล้วจับคู่)</strong>
+                        ฟังเสียงตัวอย่างฮาร์ปซิคอร์ดแล้วเลือกตอบยุคสมัยให้ถูกต้อง
+                    </div>
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700">
+                        <strong class="text-blue-400 block mb-1">2. ยุค Classical (ค้นหาคีตกวี)</strong>
+                        แตะภาพเงาเพื่อเปิดคำใบ้ผลงาน แล้วทายชื่อคีตกวีระดับโลก
+                    </div>
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700">
+                        <strong class="text-rose-400 block mb-1">3. ยุค Romantic (จัดวงออร์เคสตรา)</strong>
+                        จัดเครื่องดนตรีลงหมวดหมู่วงออร์เคสตราให้ถูกต้องภายในเวลา 25 วินาที
+                    </div>
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700">
+                        <strong class="text-purple-400 block mb-1">4. ยุค Jazz (Rhythm Challenge)</strong>
+                        แตะปุ่ม TAP 1-4 ตามจังหวะตัวโน้ตที่ตกลงมา ทำคะแนนให้ผ่านเกณฑ์
+                    </div>
+                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700">
+                        <strong class="text-cyan-400 block mb-1">5. ยุค Modern (TIME BOSS BATTLE)</strong>
+                        ตอบคำถามประวัติศาสตร์ดนตรีแบบจับเวลาข้อละ 8 วินาทีเพื่อปราบ บอสเวลา
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeHowToPlayModal()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all mt-4">
+                เข้าใจแล้ว! ปิดหน้าต่าง
+            </button>
+        </div>
+
+        <!-- Knowledge Codex Modal -->
+        <div id="modal-codex" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 p-5 flex flex-col justify-between">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📚</span>
+                    <h2 class="text-lg font-bold text-cyan-300">คลังความรู้ดนตรีที่ค้นพบ</h2>
+                </div>
+                <button onclick="closeCodexModal()" class="text-slate-400 hover:text-white p-1">✕</button>
+            </div>
+            <div class="overflow-y-auto space-y-3 flex-1 pr-1 text-xs">
+                <div class="bg-amber-950/30 border border-amber-800/50 p-3 rounded-xl">
+                    <h3 class="font-bold text-amber-400 text-sm">1. ยุคบาโรก (Baroque: 1600–1750)</h3>
+                    <p class="text-slate-300 mt-1">เน้นความหรูหรา ซับซ้อน มีการสอดประสานทำนองหลายสาย (Polyphony) เครื่องดนตรีเอกลักษณ์คือ ฮาร์ปซิคอร์ด (Harpsichord) คีตกวีสำคัญ: J.S. Bach, Vivaldi</p>
+                </div>
+                <div class="bg-blue-950/30 border border-blue-800/50 p-3 rounded-xl">
+                    <h3 class="font-bold text-blue-400 text-sm">2. ยุคคลาสสิก (Classical: 1750–1820)</h3>
+                    <p class="text-slate-300 mt-1">เน้นความสมดุล โครงสร้างเป็นระเบียบชัดเจน เริ่มใช้เปียโนและวงออร์เคสตรามาตรฐาน คีตกวีสำคัญ: W.A. Mozart, Beethoven, Haydn</p>
+                </div>
+                <div class="bg-rose-950/30 border border-rose-800/50 p-3 rounded-xl">
+                    <h3 class="font-bold text-rose-400 text-sm">3. ยุคโรแมนติก (Romantic: 1820–1900)</h3>
+                    <p class="text-slate-300 mt-1">เน้นการถ่ายทอดอารมณ์ความรู้สึกอย่างอิสระ วงออร์เคสตราขยายใหญ่ขึ้น คีตกวีสำคัญ: Chopin, Tchaikovsky, Liszt</p>
+                </div>
+                <div class="bg-purple-950/30 border border-purple-800/50 p-3 rounded-xl">
+                    <h3 class="font-bold text-purple-400 text-sm">4. ยุคแจ๊ส (Jazz: 1910–1960)</h3>
+                    <p class="text-slate-300 mt-1">เกิดในสหรัฐอเมริกา เอกลักษณ์คือ จังหวะสวิง (Swing), ขัดจังหวะ (Syncopation) และการด้นสด (Improvisation)</p>
+                </div>
+                <div class="bg-cyan-950/30 border border-cyan-800/50 p-3 rounded-xl">
+                    <h3 class="font-bold text-cyan-400 text-sm">5. ยุคร่วมสมัย (Modern: 1900–ปัจจุบัน)</h3>
+                    <p class="text-slate-300 mt-1">ไร้ขอบเขต ใช้เทคโนโลยีสังเคราะห์เสียง (Synthesizer), คอมพิวเตอร์ดนตรี และผสมผสานวัฒนธรรมทั่วโลก</p>
+                </div>
+            </div>
+            <button onclick="closeCodexModal()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-slate-200 mt-3 border border-slate-700">
+                ย้อนกลับ
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Game state engine
+        const gameState = {
+            currentScreen: 'start', // start, intro, map, level1, level2, level3, level4, level5, victory
+            crystals: [false, false, false, false, false], // 5 levels
+            totalScore: 0,
+            startTime: null,
+            endTime: null,
+            
+            // Level 3 state
+            l3TimeLeft: 25,
+            l3Timer: null,
+            l3Items: [
+                { id: 'v1', name: 'Violin', type: 'string', emoji: '🎻' },
+                { id: 'c1', name: 'Cello', type: 'string', emoji: '🎻' },
+                { id: 'f1', name: 'Flute', type: 'woodwind', emoji: '🎷' },
+                { id: 't1', name: 'Trumpet', type: 'brass', emoji: '🎺' },
+                { id: 'p1', name: 'Timpani', type: 'percussion', emoji: '🥁' },
+            ],
+            l3Placed: {},
+
+            // Level 4 state
+            l4Score: 0,
+            l4Combo: 0,
+
+            // Level 5 state
+            l5BossHp: 100,
+            l5CurrentQ: 0,
+            l5TimeLeft: 8,
+            l5Timer: null
+        };
+
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSfx(type) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'correct') {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.25, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.25);
+                });
+            } else if (type === 'wrong') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'crystal') {
+                [1046.50, 1318.51, 1567.98, 2093.00, 2637.02].forEach((f, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, now + i * 0.06);
+                    gain.gain.setValueAtTime(0.2, now + i * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.4);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + i * 0.06);
+                    osc.stop(now + i * 0.06 + 0.4);
+                });
+            } else if (type === 'hit') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(300, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            }
+        }
+
+        function playBaroqueAudioSample() {
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const arpeggio = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 196.00, 261.63, 329.63, 392.00, 523.25];
+            
+            const statusEl = document.getElementById('audio-status-text');
+            if (statusEl) statusEl.innerText = 'กำลังเล่นเพลงยุคบาโรก...';
+
+            arpeggio.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+                gain.gain.setValueAtTime(0.18, now + idx * 0.15);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.15 + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + idx * 0.15);
+                osc.stop(now + idx * 0.15 + 0.25);
+            });
+
+            setTimeout(() => {
+                const el = document.getElementById('audio-status-text');
+                if (el) el.innerText = 'เล่นเสร็จสิ้น (กดฟังซ้ำได้)';
+            }, arpeggio.length * 150 + 300);
+        }
+
+        function updateHeaderUI() {
+            const header = document.getElementById('game-header');
+            const crystalText = document.getElementById('crystal-count-text');
+            const eraTitle = document.getElementById('current-era-title');
+
+            if (gameState.currentScreen === 'start' || gameState.currentScreen === 'intro' || gameState.currentScreen === 'victory') {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+                const collected = gameState.crystals.filter(Boolean).length;
+                crystalText.innerText = `${collected}/5`;
+
+                const titles = {
+                    map: 'แผนที่กาลเวลา',
+                    level1: 'ยุค 1: Baroque',
+                    level2: 'ยุค 2: Classical',
+                    level3: 'ยุค 3: Romantic',
+                    level4: 'ยุค 4: Jazz',
+                    level5: 'ยุค 5: Modern Boss'
+                };
+                eraTitle.innerText = titles[gameState.currentScreen] || '';
+            }
+
+            const audioBanner = document.getElementById('audio-banner');
+            if (gameState.currentScreen === 'level1') {
+                audioBanner.classList.remove('hidden');
+            } else {
+                audioBanner.classList.add('hidden');
+            }
+        }
+
+        function navigateTo(screen) {
+            gameState.currentScreen = screen;
+            updateHeaderUI();
+            const container = document.getElementById('screen-container');
+            container.innerHTML = '';
+
+            switch (screen) {
+                case 'start':
+                    renderStartScreen(container);
+                    break;
+                case 'intro':
+                    renderIntroScreen(container);
+                    break;
+                case 'map':
+                    renderMapScreen(container);
+                    break;
+                case 'level1':
+                    renderLevel1(container);
+                    break;
+                case 'level2':
+                    renderLevel2(container);
+                    break;
+                case 'level3':
+                    renderLevel3(container);
+                    break;
+                case 'level4':
+                    renderLevel4(container);
+                    break;
+                case 'level5':
+                    renderLevel5(container);
+                    break;
+                case 'victory':
+                    renderVictoryScreen(container);
+                    break;
+            }
+        }
+
+        function renderStartScreen(container) {
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between p-6 text-center relative overflow-hidden bg-gradient-to-b from-indigo-950 via-slate-900 to-purple-950">
+                    
+                    <div class="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
+                        <div class="w-72 h-72 rounded-full border-4 border-dashed border-cyan-400 animate-spin-slow"></div>
+                        <div class="w-56 h-56 rounded-full border-2 border-indigo-500 animate-pulse absolute"></div>
+                    </div>
+
+                    <div class="relative z-10 pt-6">
+                        <span class="inline-block px-3 py-1 bg-indigo-500/20 border border-indigo-400/40 rounded-full text-indigo-300 text-xs font-semibold tracking-wider mb-2">
+                            MOBILE MINI GAME
+                        </span>
+                        <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-pink-400 leading-tight drop-shadow-md">
+                            MUSIC TIME MACHINE
+                        </h1>
+                        <p class="text-xs text-indigo-200 mt-1 font-light">ไทม์แมชชีนตะลุยกาลเวลาดนตรี</p>
+                    </div>
+
+                    <div class="relative z-10 my-auto flex flex-col items-center">
+                        <div class="w-40 h-40 rounded-full bg-slate-900/80 border-4 border-cyan-400/60 shadow-2xl flex items-center justify-center relative animate-pulse-glow">
+                            <span class="text-6xl animate-float">⏳</span>
+                            <span class="absolute -top-2 text-xl animate-bounce">💎</span>
+                            <span class="absolute -bottom-2 text-xl animate-bounce [animation-delay:0.3s]">💎</span>
+                        </div>
+
+                        <div class="mt-4 bg-slate-900/80 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 max-w-xs">
+                            <p class="text-xs text-amber-300 font-bold">🎯 ภารกิจประวัติศาสตร์:</p>
+                            <p class="text-xs text-slate-300 mt-0.5">"เก็บคริสตัลเสียงให้ครบ 5 ชิ้น เพื่อซ่อมแซมไทม์แมชชีนกลับสู่ปี 2026!"</p>
+                        </div>
+                    </div>
+
+                    <div class="relative z-10 space-y-3 pb-4">
+                        <button onclick="playSfx('click'); gameState.startTime = Date.now(); navigateTo('intro')" class="w-full py-4 bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 rounded-2xl font-bold text-lg text-white shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <span>🚀</span> เริ่มการเดินทาง
+                        </button>
+                        
+                        <button onclick="playSfx('click'); openHowToPlayModal()" class="w-full py-3 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded-2xl font-semibold text-sm text-slate-300 active:scale-95 transition-all">
+                            📖 วิธีเล่น
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderIntroScreen(container) {
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col justify-between p-6 bg-slate-950 relative">
+                    <div class="mt-8 space-y-4">
+                        <div class="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/50 flex items-center justify-center text-3xl mx-auto text-rose-400 animate-bounce">
+                            ⚠️
+                        </div>
+                        <h2 class="text-xl font-bold text-center text-rose-400">ระบบขัดข้องเตือนภัย!</h2>
+                        
+                        <div class="space-y-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl text-xs leading-relaxed text-slate-300">
+                            <p class="flex items-start gap-2">
+                                <span class="text-cyan-400">🚨</span>
+                                <span><strong>ระบบขัดข้อง!</strong> ไทม์แมชชีนไม่สามารถกลับสู่ปี 2026 ได้เนื่องจากสูญเสียพลังงานดนตรี</span>
+                            </p>
+                            <p class="flex items-start gap-2">
+                                <span class="text-amber-400">💎</span>
+                                <span><strong>คริสตัลเสียง 5 ชิ้น</strong> ถูกส่งกระจายไปยังประวัติศาสตร์ดนตรี 5 ยุคสมัย</span>
+                            </p>
+                            <p class="flex items-start gap-2">
+                                <span class="text-indigo-400">🎼</span>
+                                <span>ภารกิจของคุณคือ ย้อนเวลารวบรวมคริสตัลดนตรีที่หายไปกลับคืนมาให้สมบูรณ์!</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <button onclick="playSfx('click'); navigateTo('map')" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold text-base text-white shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 my-4">
+                        <span>🧭</span> ออกเดินทางสู่เส้นทางเวลา
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderMapScreen(container) {
+            const eras = [
+                { id: 1, key: 'level1', name: 'Baroque', era: 'ยุคบาโรก (1600-1750)', icon: '🎹' },
+                { id: 2, key: 'level2', name: 'Classical', era: 'ยุคคลาสสิก (1750-1820)', icon: '🎻' },
+                { id: 3, key: 'level3', name: 'Romantic', era: 'ยุคโรแมนติก (1820-1900)', icon: '🎺' },
+                { id: 4, key: 'level4', name: 'Jazz', era: 'ยุคแจ๊ส (1910-1960)', icon: '🎷' },
+                { id: 5, key: 'level5', name: 'Modern Boss', era: 'ยุคร่วมสมัย & บอสเวลา', icon: '⚡' },
+            ];
+
+            const completedCount = gameState.crystals.filter(Boolean).length;
+
+            let html = `
+                <div class="flex-1 p-5 flex flex-col justify-between bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="text-lg font-bold text-white">แผนที่เส้นเวลาดนตรี</h2>
+                                <p class="text-xs text-slate-400">เลือดยุคสมัยเพื่อออกตามหาคริสตัล</p>
+                            </div>
+                            <span class="text-xs bg-indigo-950 border border-indigo-700/60 px-3 py-1 rounded-full text-indigo-300 font-medium">
+                                ความคืบหน้า ${completedCount}/5
+                            </span>
+                        </div>
+
+                        <div class="relative pl-6 space-y-5 my-2 border-l-2 border-indigo-800/60 ml-4">
+            `;
+
+            eras.forEach((e, idx) => {
+                const isUnlocked = idx === 0 || gameState.crystals[idx - 1];
+                const isCompleted = gameState.crystals[idx];
+
+                html += `
+                    <div class="relative flex items-center gap-3">
+                        <div class="absolute -left-[35px] w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs ${
+                            isCompleted ? 'bg-cyan-500 border-cyan-300 text-slate-950 shadow-lg shadow-cyan-500/50' :
+                            isUnlocked ? 'bg-indigo-600 border-indigo-400 text-white animate-pulse' :
+                            'bg-slate-800 border-slate-700 text-slate-500'
+                        }">
+                            ${isCompleted ? '✓' : e.id}
+                        </div>
+
+                        <button onclick="${isUnlocked ? `playSfx('click'); navigateTo('${e.key}')` : `playSfx('wrong')`}" 
+                            class="flex-1 p-3.5 rounded-2xl border transition-all text-left flex items-center justify-between ${
+                                isCompleted ? 'bg-slate-800/90 border-cyan-500/50 text-cyan-200' :
+                                isUnlocked ? 'bg-slate-800/60 border-indigo-500/40 text-white hover:bg-slate-800 active:scale-95' :
+                                'bg-slate-900/40 border-slate-800 text-slate-600 opacity-60 cursor-not-allowed'
+                            }">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl">${e.icon}</span>
+                                <div>
+                                    <h3 class="font-bold text-sm">${e.name}</h3>
+                                    <p class="text-[10px] text-slate-400">${e.era}</p>
+                                </div>
+                            </div>
+                            <div>
+                                ${isCompleted ? '<span class="text-cyan-400 text-sm font-bold">💎 สำเร็จ</span>' : 
+                                  isUnlocked ? '<span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">เข้าลุย ➔</span>' : 
+                                  '<span class="text-xs text-slate-500">🔒 ล็อค</span>'}
+                            </div>
+                        </button>
+                    </div>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+
+                    ${completedCount === 5 ? `
+                        <button onclick="playSfx('crystal'); navigateTo('victory')" class="w-full py-4 bg-gradient-to-r from-amber-500 via-pink-500 to-cyan-500 rounded-2xl font-bold text-base text-white shadow-xl animate-bounce mt-4">
+                            ✨ ซ่อมแซมไทม์แมชชีน! (ผ่านครบทุกยุคแล้ว)
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function renderLevel1(container) {
+            container.innerHTML = `
+                <div class="flex-1 p-5 flex flex-col justify-between bg-slate-950">
+                    <div class="space-y-4">
+                        <div class="bg-amber-950/40 border border-amber-800/50 p-4 rounded-2xl text-center">
+                            <span class="text-3xl">🎹</span>
+                            <h2 class="text-lg font-bold text-amber-400 mt-1">ยุคบาโรก (Baroque Era)</h2>
+                            <p class="text-xs text-amber-200/80 mt-0.5">ภารกิจ: "ฟังเสียงตัวอย่างดนตรีฮาร์ปซิคอร์ดแล้วทายยุคให้ถูกต้อง"</p>
+                        </div>
+
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+                            <p class="text-xs text-slate-300 font-semibold leading-relaxed">
+                                💡 คำใบ้ดนตรี: เสียงดนตรีมีลักษณะสอดประสานทำนองหลายสาย (Polyphony) ใช้เครื่องดนตรีลิ่มนิ้วโบราณเรียกว่า "ฮาร์ปซิคอร์ด" (Harpsichord)
+                            </p>
+                            <p class="text-xs text-slate-400 italic">
+                                *กดปุ่มเล่นเสียงดนตรีด้านล่างจอเพื่อทดลองฟัง*
+                            </p>
+                        </div>
+
+                        <div class="space-y-2.5 pt-2">
+                            <p class="text-xs font-bold text-indigo-300">ตัวเลือกคำตอบ:</p>
+                            
+                            <button onclick="checkLevel1Answer('A')" class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-amber-500 rounded-2xl text-left font-semibold text-sm flex items-center justify-between active:scale-95 transition-all">
+                                <span>A. ยุคบาโรก (Baroque Era)</span>
+                                <span class="text-xs text-amber-400">1600 - 1750</span>
+                            </button>
+
+                            <button onclick="checkLevel1Answer('B')" class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-amber-500 rounded-2xl text-left font-semibold text-sm flex items-center justify-between active:scale-95 transition-all">
+                                <span>B. ยุคคลาสสิก (Classical Era)</span>
+                                <span class="text-xs text-slate-400">1750 - 1820</span>
+                            </button>
+
+                            <button onclick="checkLevel1Answer('C')" class="w-full p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-amber-500 rounded-2xl text-left font-semibold text-sm flex items-center justify-between active:scale-95 transition-all">
+                                <span>C. ยุคโรแมนติก (Romantic Era)</span>
+                                <span class="text-xs text-slate-400">1820 - 1900</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="l1-feedback" class="text-center text-xs min-h-[30px] my-2 font-semibold"></div>
+
+                    <button onclick="navigateTo('map')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-semibold border border-slate-700">
+                        ↩️ ย้อนกลับแผนที่
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('btn-play-audio-sample').onclick = playBaroqueAudioSample;
+        }
+
+        function checkLevel1Answer(choice) {
+            const feedback = document.getElementById('l1-feedback');
+            if (choice === 'A') {
+                playSfx('correct');
+                playSfx('crystal');
+                gameState.crystals[0] = true;
+                gameState.totalScore += 20;
+                feedback.className = "text-center text-xs my-2 font-semibold text-emerald-400 animate-bounce";
+                feedback.innerText = "✨ ถูกต้อง! คุณได้รับ คริสตัลเสียงแห่ง Baroque!";
+                setTimeout(() => {
+                    navigateTo('map');
+                }, 1600);
+            } else {
+                playSfx('wrong');
+                feedback.className = "text-center text-xs my-2 font-semibold text-rose-400";
+                feedback.innerText = "❌ ยังไม่ถูกต้อง ลองฟังเสียงตัวอย่างแล้วเลือกใหม่อีกครั้ง!";
+            }
+        }
+
+        function renderLevel2(container) {
+            container.innerHTML = `
+                <div class="flex-1 p-5 flex flex-col justify-between bg-slate-950">
+                    <div class="space-y-4">
+                        <div class="bg-blue-950/40 border border-blue-800/50 p-4 rounded-2xl text-center">
+                            <span class="text-3xl">🎻</span>
+                            <h2 class="text-lg font-bold text-blue-400 mt-1">ยุคคลาสสิก (Classical Era)</h2>
+                            <p class="text-xs text-blue-200/80 mt-0.5">ภารกิจ: "แตะเปิดคำใบ้ภาพเงาเพื่อค้นหาคีตกวีผู้ยิ่งใหญ่"</p>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="revealComposerHint(1)" class="p-3 bg-slate-900 border border-slate-800 hover:border-blue-500 rounded-2xl flex flex-col items-center gap-1 active:scale-95 transition-all">
+                                <span class="text-3xl filter brightness-0 invert opacity-60">👤</span>
+                                <span class="text-[10px] text-blue-300 font-bold">คำใบ้ที่ 1</span>
+                            </button>
+                            <button onclick="revealComposerHint(2)" class="p-3 bg-slate-900 border border-slate-800 hover:border-blue-500 rounded-2xl flex flex-col items-center gap-1 active:scale-95 transition-all">
+                                <span class="text-3xl filter brightness-0 invert opacity-60">🎼</span>
+                                <span class="text-[10px] text-blue-300 font-bold">คำใบ้ที่ 2</span>
+                            </button>
+                            <button onclick="revealComposerHint(3)" class="p-3 bg-slate-900 border border-slate-800 hover:border-blue-500 rounded-2xl flex flex-col items-center gap-1 active:scale-95 transition-all">
+                                <span class="text-3xl filter brightness-0 invert opacity-60">👑</span>
+                                <span class="text-[10px] text-blue-300 font-bold">คำใบ้ที่ 3</span>
+                            </button>
+                        </div>
+
+                        <div id="composer-clues-box" class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl min-h-[90px] text-xs text-slate-300 space-y-1">
+                            <p class="text-slate-500 italic text-center pt-4">แตะที่ปุ่มภาพเงาด้านบนเพื่อเปิดคำใบ้คีตกวี...</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <p class="text-xs font-bold text-indigo-300">คุณคิดว่าคีตกวีท่านนี้คือใคร?</p>
+                            <div class="grid grid-cols-1 gap-2">
+                                <button onclick="checkLevel2Answer('Mozart')" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-400 rounded-xl font-bold text-xs text-left active:scale-95 transition-all">
+                                     Wolfgang Amadeus Mozart
+                                </button>
+                                <button onclick="checkLevel2Answer('Beethoven')" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-400 rounded-xl font-bold text-xs text-left active:scale-95 transition-all">
+                                     Ludwig van Beethoven
+                                </button>
+                                <button onclick="checkLevel2Answer('Bach')" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-400 rounded-xl font-bold text-xs text-left active:scale-95 transition-all">
+                                     Johann Sebastian Bach
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="l2-feedback" class="text-center text-xs font-semibold my-2"></div>
+
+                    <button onclick="navigateTo('map')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-semibold border border-slate-700">
+                        ↩️ ย้อนกลับแผนที่
+                    </button>
+                </div>
+            `;
+        }
+
+        const composerClues = {
+            1: "• เป็นอัจฉริยะคีตกวีแห่งยุคคลาสสิกที่แต่งเพลงตั้งแต่เด็ก",
+            2: "• แต่งบทเพลงมากกว่า 600 ชิ้นตลอดช่วงชีวิต",
+            3: "• ผลงานชื่อดังระดับโลก เช่น โอเปร่า The Magic Flute และ Eine kleine Nachtmusik"
+        };
+        const revealedHints = new Set();
+
+        function revealComposerHint(num) {
+            playSfx('click');
+            revealedHints.add(num);
+            const box = document.getElementById('composer-clues-box');
+            let content = '';
+            revealedHints.forEach(n => {
+                content += `<p class="text-blue-300 font-medium">${composerClues[n]}</p>`;
+            });
+            box.innerHTML = content;
+        }
+
+        function checkLevel2Answer(name) {
+            const feedback = document.getElementById('l2-feedback');
+            if (name === 'Mozart') {
+                playSfx('correct');
+                playSfx('crystal');
+                gameState.crystals[1] = true;
+                gameState.totalScore += 20;
+                feedback.className = "text-center text-xs my-2 font-semibold text-emerald-400 animate-bounce";
+                feedback.innerHTML = "✨ ถูกต้อง! <strong>WOLFGANG AMADEUS MOZART</strong><br>คุณได้รับ คริสตัลแห่ง Classical!";
+                setTimeout(() => {
+                    navigateTo('map');
+                }, 2000);
+            } else {
+                playSfx('wrong');
+                feedback.className = "text-center text-xs my-2 font-semibold text-rose-400";
+                feedback.innerText = "❌ ยังไม่ใช่คีตกวีท่านนี้ ลองเปิดคำใบ้เพิ่มแล้วเลือกใหม่!";
+            }
+        }
+
+        function renderLevel3(container) {
+            gameState.l3TimeLeft = 25;
+            gameState.l3Placed = {};
+            if (gameState.l3Timer) clearInterval(gameState.l3Timer);
+
+            container.innerHTML = `
+                <div class="flex-1 p-5 flex flex-col justify-between bg-slate-950">
+                    <div class="space-y-3">
+                        <div class="bg-rose-950/40 border border-rose-800/50 p-3 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">🎺</span>
+                                <div>
+                                    <h2 class="text-sm font-bold text-rose-400">ยุคโรแมนติก (Romantic)</h2>
+                                    <p class="text-[10px] text-rose-200">จัดหมวดหมู่วงออร์เคสตรา</p>
+                                </div>
+                            </div>
+                            <div class="bg-rose-950 border border-rose-600 px-3 py-1 rounded-full text-xs font-bold text-rose-300">
+                                ⏱️ <span id="l3-timer-display">25</span>s
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div id="box-string" class="bg-slate-900 border-2 border-dashed border-rose-500/40 p-2.5 rounded-xl min-h-[70px]">
+                                <span class="font-bold text-rose-400 block mb-1">🎻 เครื่องสาย (Strings)</span>
+                                <div id="items-string" class="flex flex-wrap gap-1"></div>
+                            </div>
+                            <div id="box-woodwind" class="bg-slate-900 border-2 border-dashed border-emerald-500/40 p-2.5 rounded-xl min-h-[70px]">
+                                <span class="font-bold text-emerald-400 block mb-1">🎷 เครื่องลมไม้</span>
+                                <div id="items-woodwind" class="flex flex-wrap gap-1"></div>
+                            </div>
+                            <div id="box-brass" class="bg-slate-900 border-2 border-dashed border-amber-500/40 p-2.5 rounded-xl min-h-[70px]">
+                                <span class="font-bold text-amber-400 block mb-1">🎺 เครื่องทองเหลือง</span>
+                                <div id="items-brass" class="flex flex-wrap gap-1"></div>
+                            </div>
+                            <div id="box-percussion" class="bg-slate-900 border-2 border-dashed border-cyan-500/40 p-2.5 rounded-xl min-h-[70px]">
+                                <span class="font-bold text-cyan-400 block mb-1">🥁 เครื่องกระทบ</span>
+                                <div id="items-percussion" class="flex flex-wrap gap-1"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-2">
+                            <span class="text-xs text-slate-400 font-bold block">แตะเลือกเครื่องดนตรี เพื่อจัดส่งเข้ากลุ่ม:</span>
+                            <div id="instrument-pool" class="flex flex-wrap gap-2">
+                                ${gameState.l3Items.map(item => `
+                                    <button id="btn-item-${item.id}" onclick="selectL3Item('${item.id}')" class="px-3 py-2 bg-slate-800 border border-slate-700 hover:border-rose-400 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all">
+                                        <span>${item.emoji}</span>
+                                        <span>${item.name}</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="l3-feedback" class="text-center text-xs font-semibold my-1"></div>
+
+                    <button onclick="clearInterval(gameState.l3Timer); navigateTo('map')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-semibold border border-slate-700">
+                        ↩️ ย้อนกลับแผนที่
+                    </button>
+                </div>
+            `;
+
+            gameState.l3Timer = setInterval(() => {
+                gameState.l3TimeLeft--;
+                const timerEl = document.getElementById('l3-timer-display');
+                if (timerEl) timerEl.innerText = gameState.l3TimeLeft;
+
+                if (gameState.l3TimeLeft <= 0) {
+                    clearInterval(gameState.l3Timer);
+                    playSfx('wrong');
+                    const fb = document.getElementById('l3-feedback');
+                    if (fb) {
+                        fb.className = "text-center text-xs font-semibold text-rose-400";
+                        fb.innerText = "⏰ หมดเวลา! กรุณาลองใหม่อีกครั้ง";
+                    }
+                    setTimeout(() => renderLevel3(container), 2000);
+                }
+            }, 1000);
+        }
+
+        let selectedL3ItemId = null;
+
+        function selectL3Item(itemId) {
+            playSfx('click');
+            selectedL3ItemId = itemId;
+            const item = gameState.l3Items.find(i => i.id === itemId);
+
+            const categories = [
+                { id: 'string', name: 'เครื่องสาย' },
+                { id: 'woodwind', name: 'เครื่องลมไม้' },
+                { id: 'brass', name: 'เครื่องทองเหลือง' },
+                { id: 'percussion', name: 'เครื่องกระทบ' },
+            ];
+
+            const fb = document.getElementById('l3-feedback');
+            fb.innerHTML = `
+                <div class="bg-slate-800 p-2 rounded-xl border border-slate-700 space-y-1">
+                    <p class="text-rose-300 font-bold">จัดวาง "${item.name}" ลงกลุ่มใด?</p>
+                    <div class="flex flex-wrap justify-center gap-1">
+                        ${categories.map(c => `
+                            <button onclick="placeL3Item('${c.id}')" class="px-2.5 py-1 bg-slate-700 hover:bg-rose-600 rounded-lg text-[11px] font-bold text-white">
+                                ${c.name}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function placeL3Item(targetCategory) {
+            if (!selectedL3ItemId) return;
+            const item = gameState.l3Items.find(i => i.id === selectedL3ItemId);
+            
+            if (item.type === targetCategory) {
+                playSfx('correct');
+                gameState.l3Placed[item.id] = targetCategory;
+
+                const targetContainer = document.getElementById(`items-${targetCategory}`);
+                const btn = document.getElementById(`btn-item-${item.id}`);
+                if (btn && targetContainer) {
+                    btn.setAttribute('disabled', 'true');
+                    btn.className = "px-2 py-1 bg-emerald-950 border border-emerald-600 rounded-lg text-[10px] text-emerald-300 font-bold flex items-center gap-1";
+                    targetContainer.appendChild(btn);
+                }
+
+                document.getElementById('l3-feedback').innerHTML = '';
+                selectedL3ItemId = null;
+
+                if (Object.keys(gameState.l3Placed).length === gameState.l3Items.length) {
+                    clearInterval(gameState.l3Timer);
+                    playSfx('crystal');
+                    gameState.crystals[2] = true;
+                    gameState.totalScore += 20;
+
+                    const fb = document.getElementById('l3-feedback');
+                    fb.className = "text-center text-xs font-semibold text-emerald-400 animate-bounce my-2";
+                    fb.innerText = "✨ สุดยอด! คุณปลดล็อก Crystal แห่งอารมณ์ ยุค Romantic!";
+                    setTimeout(() => navigateTo('map'), 2000);
+                }
+            } else {
+                playSfx('wrong');
+                const fb = document.getElementById('l3-feedback');
+                fb.className = "text-center text-xs font-semibold text-rose-400 my-1";
+                fb.innerText = `❌ ${item.name} ไม่ได้อยู่ในหมวดนี้ ลองจัดใหม่อีกครั้ง!`;
+            }
+        }
+
+        function renderLevel4(container) {
+            gameState.l4Score = 0;
+            gameState.l4Combo = 0;
+
+            container.innerHTML = `
+                <div class="flex-1 p-5 flex flex-col justify-between bg-slate-950 relative overflow-hidden">
+                    <div class="bg-purple-950/40 border border-purple-800/50 p-3 rounded-2xl flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">🎷</span>
+                            <div>
+                                <h2 class="text-sm font-bold text-purple-300">ยุคแจ๊ส (Jazz Era)</h2>
+                                <p class="text-[10px] text-purple-200">แตะปุ่มตามจังหวะสวิง (Rhythm Challenge)</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="l4-score-display" class="text-xs font-extrabold text-cyan-300 block">SCORE: 0</span>
+                            <span id="l4-combo-display" class="text-[10px] font-bold text-amber-400 block">COMBO x0</span>
+                        </div>
+                    </div>
+
+                    <div id="rhythm-stage" class="flex-1 my-3 bg-slate-900/90 border border-purple-900/60 rounded-2xl relative overflow-hidden flex flex-col justify-end p-3">
+                        <div id="feedback-pop" class="absolute top-1/3 left-0 right-0 text-center font-extrabold text-2xl text-amber-400 drop-shadow-md transition-all opacity-0 pointer-events-none">
+                            PERFECT!
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-2 border-t-2 border-dashed border-purple-500/60 pt-3 relative z-10">
+                            <button onclick="handleRhythmTap(1)" class="py-4 bg-purple-900/50 hover:bg-purple-600 border border-purple-400/50 active:bg-purple-400 rounded-xl font-bold text-xs text-purple-200 active:scale-95 transition-all">
+                                TAP 1
+                            </button>
+                            <button onclick="handleRhythmTap(2)" class="py-4 bg-purple-900/50 hover:bg-purple-600 border border-purple-400/50 active:bg-purple-400 rounded-xl font-bold text-xs text-purple-200 active:scale-95 transition-all">
+                                TAP 2
+                            </button>
+                            <button onclick="handleRhythmTap(3)" class="py-4 bg-purple-900/50 hover:bg-purple-600 border border-purple-400/50 active:bg-purple-400 rounded-xl font-bold text-xs text-purple-200 active:scale-95 transition-all">
+                                TAP 3
+                            </button>
+                            <button onclick="handleRhythmTap(4)" class="py-4 bg-purple-900/50 hover:bg-purple-600 border border-purple-400/50 active:bg-purple-400 rounded-xl font-bold text-xs text-purple-200 active:scale-95 transition-all">
+                                TAP 4
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="l4-status" class="text-center text-xs text-purple-300 font-semibold mb-2">
+                        กดปุ่ม TAP เมื่อวงกลมตัวโน้ตตกลงมาถึงเส้นด้านล่าง!
+                    </div>
+
+                    <button onclick="navigateTo('map')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-semibold border border-slate-700">
+                        ↩️ ย้อนกลับแผนที่
+                    </button>
+                </div>
+            `;
+
+            startJazzRhythmSession();
+        }
+
+        let activeTargetTrack = 1;
+
+        function startJazzRhythmSession() {
+            let noteCount = 0;
+            const interval = setInterval(() => {
+                noteCount++;
+                activeTargetTrack = Math.floor(Math.random() * 4) + 1;
+                
+                playSfx('hit');
+                showRhythmNoteVisual(activeTargetTrack);
+
+                if (noteCount >= 12) {
+                    clearInterval(interval);
+                    setTimeout(finishJazzLevel, 1500);
+                }
+            }, 1000);
+        }
+
+        function showRhythmNoteVisual(track) {
+            const stage = document.getElementById('rhythm-stage');
+            if (!stage) return;
+
+            const note = document.createElement('div');
+            const lefts = ['12%', '37%', '62%', '87%'];
+            note.className = "absolute w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 shadow-lg border border-white flex items-center justify-center text-xs animate-bounce pointer-events-none";
+            note.style.left = lefts[track - 1];
+            note.style.top = '20%';
+            note.innerText = '🎵';
+
+            stage.appendChild(note);
+            setTimeout(() => {
+                if (note.parentNode) note.parentNode.removeChild(note);
+            }, 900);
+        }
+
+        function handleRhythmTap(track) {
+            playSfx('click');
+            const pop = document.getElementById('feedback-pop');
+
+            if (track === activeTargetTrack) {
+                playSfx('correct');
+                gameState.l4Combo++;
+                gameState.l4Score += 10 * gameState.l4Combo;
+
+                if (pop) {
+                    pop.innerText = `PERFECT! x${gameState.l4Combo}`;
+                    pop.className = "absolute top-1/3 left-0 right-0 text-center font-extrabold text-2xl text-emerald-400 drop-shadow-md transition-all opacity-100 animate-bounce";
+                }
+            } else {
+                playSfx('wrong');
+                gameState.l4Combo = 0;
+                if (pop) {
+                    pop.innerText = "MISS!";
+                    pop.className = "absolute top-1/3 left-0 right-0 text-center font-extrabold text-2xl text-rose-500 drop-shadow-md transition-all opacity-100";
+                }
+            }
+
+            const scoreEl = document.getElementById('l4-score-display');
+            const comboEl = document.getElementById('l4-combo-display');
+            if (scoreEl) scoreEl.innerText = `SCORE: ${gameState.l4Score}`;
+            if (comboEl) comboEl.innerText = `COMBO x${gameState.l4Combo}`;
+
+            setTimeout(() => {
+                if (pop) pop.classList.add('opacity-0');
+            }, 500);
+        }
+
+        function finishJazzLevel() {
+            if (gameState.l4Score >= 50) {
+                playSfx('crystal');
+                gameState.crystals[3] = true;
+                gameState.totalScore += 20;
+                const status = document.getElementById('l4-status');
+                if (status) {
+                    status.className = "text-center text-xs text-emerald-400 font-bold animate-bounce";
+                    status.innerText = "✨ ผ่านด่านสวิงแจ๊ส! คุณได้รับ Crystal ชิ้นที่ 4!";
+                }
+                setTimeout(() => navigateTo('map'), 2000);
+            } else {
+                playSfx('wrong');
+                const status = document.getElementById('l4-status');
+                if (status) {
+                    status.className = "text-center text-xs text-rose-400 font-bold";
+                    status.innerText = "คะแนนไม่ถึงเป้าหมาย 50 คะแนน! กำลังเริ่มใหม่...";
+                }
+                setTimeout(() => renderLevel4(document.getElementById('screen-container')), 2000);
+            }
+        }
+
+        const bossQuestions = [
+            { q: "1. ดนตรียุคใดเกิดขึ้นก่อนยุคคลาสสิก (Classical)?", choices: ["Baroque", "Romantic", "Jazz"], answer: 0 },
+            { q: "2. เครื่องดนตรีชนิดใดจัดเป็นเครื่องสาย (Strings)?", choices: ["Flute", "Violin", "Trumpet"], answer: 1 },
+            { q: "3. Wolfgang Amadeus Mozart เป็นคีตกวีในยุคใด?", choices: ["Romantic", "Classical", "Modern"], answer: 1 },
+            { q: "4. ลักษณะเด่นสำคัญของดนตรีแจ๊ส (Jazz) คืออะไร?", choices: ["ความสอดประสานทำนองเข้มงวด", "จังหวะสวิงและการด้นสด", "ดนตรีอิเล็กทรอนิกส์"], answer: 1 },
+            { q: "5. ดนตรีร่วมสมัย (Modern/Contemporary) มีเอกลักษณ์คืออะไร?", choices: ["ไร้การใช้เทคโนโลยี", "ใช้ซินธิไซเซอร์ผสมผสานหลากหลายแนว", "เน้นออร์เคสตราขนาดใหญ่เท่านั้น"], answer: 1 }
+        ];
+
+        function renderLevel5(container) {
+            gameState.l5BossHp = 100;
+            gameState.l5CurrentQ = 0;
+
+            container.innerHTML = `
+                <div class="flex-1 p-5 flex flex-col justify-between bg-slate-950">
+                    <div class="space-y-3">
+                        <div class="bg-cyan-950/50 border border-cyan-800 p-3 rounded-2xl">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl animate-spin-slow">👾</span>
+                                    <div>
+                                        <h2 class="text-sm font-bold text-cyan-300">TIME MUSIC BOSS</h2>
+                                        <p class="text-[10px] text-cyan-200">บอสผู้ควบคุมห้วงเวลากาลเวลา</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-amber-400">ข้อที่ <span id="l5-q-idx">1</span>/5</span>
+                            </div>
+
+                            <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-700">
+                                <div id="boss-hp-fill" class="bg-gradient-to-r from-rose-500 via-amber-400 to-cyan-400 h-full w-full transition-all duration-300"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center px-2">
+                            <span class="text-xs text-slate-400 font-bold">เวลาตอบคำถาม:</span>
+                            <span id="l5-timer-num" class="text-xs font-extrabold text-amber-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">⏱️ 8s</span>
+                        </div>
+
+                        <div id="l5-question-box" class="bg-slate-900 border border-slate-800 p-4 rounded-2xl text-xs font-bold text-cyan-100 min-h-[70px] flex items-center">
+                            ${bossQuestions[0].q}
+                        </div>
+
+                        <div id="l5-choices-container" class="space-y-2">
+                            ${bossQuestions[0].choices.map((c, idx) => `
+                                <button onclick="answerBossQ(${idx})" class="w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-400 rounded-xl text-xs font-bold text-left text-slate-200 active:scale-95 transition-all">
+                                    ${c}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div id="l5-feedback" class="text-center text-xs font-bold my-1 min-h-[20px]"></div>
+
+                    <button onclick="clearInterval(gameState.l5Timer); navigateTo('map')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-semibold border border-slate-700">
+                        ↩️ ย้อนกลับแผนที่
+                    </button>
+                </div>
+            `;
+
+            startL5QTimer();
+        }
+
+        function startL5QTimer() {
+            gameState.l5TimeLeft = 8;
+            if (gameState.l5Timer) clearInterval(gameState.l5Timer);
+
+            gameState.l5Timer = setInterval(() => {
+                gameState.l5TimeLeft--;
+                const timerEl = document.getElementById('l5-timer-num');
+                if (timerEl) timerEl.innerText = `⏱️ ${gameState.l5TimeLeft}s`;
+
+                if (gameState.l5TimeLeft <= 0) {
+                    playSfx('wrong');
+                    answerBossQ(-1);
+                }
+            }, 1000);
+        }
+
+        function answerBossQ(chosenIdx) {
+            clearInterval(gameState.l5Timer);
+            const current = bossQuestions[gameState.l5CurrentQ];
+            const feedback = document.getElementById('l5-feedback');
+
+            if (chosenIdx === current.answer) {
+                playSfx('correct');
+                gameState.l5BossHp -= 20;
+                document.getElementById('boss-hp-fill').style.width = `${gameState.l5BossHp}%`;
+                feedback.className = "text-center text-xs font-bold text-emerald-400 my-1";
+                feedback.innerText = "💥 โจมตีโดนจุดอ่อนของบอส! (-20 HP)";
+            } else {
+                playSfx('wrong');
+                feedback.className = "text-center text-xs font-bold text-rose-400 my-1";
+                feedback.innerText = "❌ ตอบผิด หรือหมดเวลา! บอสป้องกันสำเร็จ";
+            }
+
+            gameState.l5CurrentQ++;
+
+            setTimeout(() => {
+                if (gameState.l5CurrentQ < bossQuestions.length) {
+                    const qData = bossQuestions[gameState.l5CurrentQ];
+                    document.getElementById('l5-q-idx').innerText = gameState.l5CurrentQ + 1;
+                    document.getElementById('l5-question-box').innerText = qData.q;
+                    document.getElementById('l5-choices-container').innerHTML = qData.choices.map((c, idx) => `
+                        <button onclick="answerBossQ(${idx})" class="w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-400 rounded-xl text-xs font-bold text-left text-slate-200 active:scale-95 transition-all">
+                            ${c}
+                        </button>
+                    `).join('');
+                    feedback.innerText = '';
+                    startL5QTimer();
+                } else {
+                    if (gameState.l5BossHp <= 40) {
+                        playSfx('crystal');
+                        gameState.crystals[4] = true;
+                        gameState.totalScore += 20;
+                        feedback.className = "text-center text-xs font-bold text-cyan-300 animate-bounce my-1";
+                        feedback.innerText = "🏆 ปราบ TIME BOSS สำเร็จ! คุณได้รับ คริสตัลชิ้นสุดท้าย!";
+                        setTimeout(() => navigateTo('victory'), 2000);
+                    } else {
+                        feedback.className = "text-center text-xs font-bold text-rose-400 my-1";
+                        feedback.innerText = "พลังบอสยังไม่ลดลงพอ! เริ่มท้าทายใหม่อีกครั้ง";
+                        setTimeout(() => renderLevel5(document.getElementById('screen-container')), 2000);
+                    }
+                }
+            }, 1200);
+        }
+
+        function renderVictoryScreen(container) {
+            gameState.endTime = Date.now();
+            const elapsed = Math.round((gameState.endTime - (gameState.startTime || Date.now())) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            let rank = 'S';
+            let rankColor = 'text-amber-400';
+            if (gameState.totalScore < 70) {
+                rank = 'C';
+                rankColor = 'text-slate-400';
+            } else if (gameState.totalScore < 85) {
+                rank = 'B';
+                rankColor = 'text-blue-400';
+            } else if (gameState.totalScore < 95) {
+                rank = 'A';
+                rankColor = 'text-purple-400';
+            }
+
+            container.innerHTML = `
+                <div class="flex-1 p-6 flex flex-col justify-between text-center bg-gradient-to-b from-slate-950 via-indigo-950 to-purple-950 relative overflow-hidden">
+                    
+                    <div class="pt-4 space-y-2 relative z-10">
+                        <span class="text-5xl animate-bounce inline-block">🚀</span>
+                        <h2 class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300">
+                            MISSION COMPLETE!
+                        </h2>
+                        <p class="text-xs text-indigo-200">คุณซ่อมแซมไทม์แมชชีนเดินทางกลับสู่ปี 2026 สำเร็จ!</p>
+                    </div>
+
+                    <div class="my-auto py-4 relative z-10">
+                        <div class="w-32 h-32 rounded-full bg-slate-900 border-4 border-cyan-400 mx-auto flex items-center justify-center relative shadow-2xl shadow-cyan-500/50 animate-pulse-glow">
+                            <span class="text-4xl">💎</span>
+                            <div class="absolute inset-0 rounded-full border-2 border-dashed border-amber-300 animate-spin-slow"></div>
+                        </div>
+
+                        <div class="mt-5 bg-slate-900/90 border border-slate-800 p-4 rounded-2xl max-w-xs mx-auto space-y-2 text-xs">
+                            <div class="flex justify-between border-b border-slate-800 pb-1.5">
+                                <span class="text-slate-400">🎵 คริสตัลที่สะสม:</span>
+                                <span class="text-cyan-300 font-bold">5/5 ชิ้น</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1.5">
+                                <span class="text-slate-400">⏱️ เวลาที่ใช้:</span>
+                                <span class="text-slate-200 font-bold">${timeStr} นาที</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1.5">
+                                <span class="text-slate-400">⭐ คะแนนรวม:</span>
+                                <span class="text-amber-300 font-bold">${gameState.totalScore} คะแนน</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-1">
+                                <span class="text-slate-400 font-bold">🏆 ระดับการเดินทาง:</span>
+                                <span class="text-2xl font-extrabold ${rankColor}">RANK ${rank}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 relative z-10 pb-2">
+                        <button onclick="playSfx('click'); openCodexModal()" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl font-bold text-xs text-white shadow-lg active:scale-95 transition-all">
+                            📚 ดูสรุปความรู้ประวัติศาสตร์ดนตรี
+                        </button>
+                        
+                        <button onclick="playSfx('click'); resetGame()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-bold text-xs text-slate-300 active:scale-95 transition-all">
+                            🔄 เล่นอีกครั้ง
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetGame() {
+            gameState.crystals = [false, false, false, false, false];
+            gameState.totalScore = 0;
+            gameState.startTime = Date.now();
+            navigateTo('start');
+        }
+
+        function openHowToPlayModal() {
+            document.getElementById('modal-how-to-play').classList.remove('hidden');
+        }
+        function closeHowToPlayModal() {
+            document.getElementById('modal-how-to-play').classList.add('hidden');
+        }
+
+        function openCodexModal() {
+            document.getElementById('modal-codex').classList.remove('hidden');
+        }
+        function closeCodexModal() {
+            document.getElementById('modal-codex').classList.add('hidden');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            navigateTo('start');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมโชว์ แฟนพันธุ์แท้ดนตรี - Music Trivia Game Show</title>
+    
+    <!-- Google Fonts & Tailwind CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        kanit: ['Kanit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0a0d18',
+                            card: '#131b2e',
+                            purple: '#8b5cf6',
+                            pink: '#ec4899',
+                            cyan: '#06b6d4',
+                            gold: '#f59e0b',
+                            success: '#10b981',
+                            danger: '#ef4444'
+                        }
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite alternate',
+                        'bounce-subtle': 'bounceSubtle 1.5s infinite alternate',
+                        'float': 'float 3s ease-in-out infinite',
+                        'card-flip': 'cardFlip 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%': { boxShadow: '0 0 15px rgba(236, 72, 153, 0.4), 0 0 30px rgba(139, 92, 246, 0.2)' },
+                            '100%': { boxShadow: '0 0 25px rgba(236, 72, 153, 0.8), 0 0 50px rgba(6, 182, 212, 0.4)' }
+                        },
+                        bounceSubtle: {
+                            '0%': { transform: 'translateY(0)' },
+                            '100%': { transform: 'translateY(-6px)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-10px) rotate(2deg)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #060913;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(19, 27, 46, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0d18;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b5cf6;
+        }
+
+        /* Neon Glow Text */
+        .neon-text-pink {
+            text-shadow: 0 0 10px rgba(236, 72, 153, 0.7), 0 0 20px rgba(236, 72, 153, 0.4);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.7), 0 0 20px rgba(6, 182, 212, 0.4);
+        }
+        .neon-text-gold {
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.7), 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white relative">
+
+    <!-- Dynamic Stage Canvas Background -->
+    <canvas id="bg-canvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+    <!-- Top Navigation Header -->
+    <header class="relative z-10 w-full px-4 py-4 max-w-5xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 p-[2px] shadow-lg shadow-purple-500/30">
+                <div class="w-full h-full bg-brand-dark rounded-[10px] flex items-center justify-center">
+                    <span class="text-xl">🎙️</span>
+                </div>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-extrabold tracking-wide bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-400 bg-clip-text text-transparent">
+                    แฟนพันธุ์แท้ดนตรี
+                </h1>
+                <p class="text-xs text-slate-400 font-light">Music Fanatic Game Show 2026</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- Audio Toggle Button -->
+            <button id="audio-toggle" onclick="toggleAudio()" class="glass-card px-3 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 hover:bg-white/10 transition border border-white/10">
+                <span id="audio-icon">🔊</span>
+                <span id="audio-text" class="hidden sm:inline">เปิดเสียง</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="relative z-10 flex-1 w-full max-w-4xl mx-auto px-4 py-4 flex flex-col justify-center">
+
+        <!-- ================= 1. CATEGORY SELECTION SCREEN ================= -->
+        <section id="screen-category" class="w-full transition-all duration-500">
+            <div class="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl animate-pulse-glow border border-purple-500/30">
+                
+                <!-- Host Introduction -->
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-8 bg-purple-950/40 p-4 sm:p-5 rounded-2xl border border-purple-500/20">
+                    <div class="relative flex-shrink-0">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-3xl sm:text-4xl shadow-lg animate-float">
+                            🕶️
+                        </div>
+                        <span class="absolute -bottom-1 -right-1 bg-emerald-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full border border-black">LIVE</span>
+                    </div>
+                    <div class="text-center sm:text-left">
+                        <div class="inline-block bg-pink-500/20 text-pink-300 text-xs font-semibold px-2.5 py-1 rounded-full mb-1 border border-pink-500/30">
+                            พิธีกรรายการแฟนพันธุ์แท้ดนตรี
+                        </div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white mb-1">ยินดีต้อนรับสู่เวทีประลองความรู้ดนตรี! 🎵</h2>
+                        <p class="text-sm text-slate-300 leading-relaxed">
+                            "กติกาง่ายๆ ครับ! ผมจะให้คำใบ้ทีละข้อ โดยเริ่มจาก<strong class="text-pink-400">คำใบ้ยากสุดก่อน</strong> หากยังทายไม่ได้ คุณสามารถกดขอคำใบ้ที่ง่ายขึ้นได้ ทายถูกรับทันที 1 คะแนน แข่งกันทั้งหมด 5 ข้อ! เลือกแนวเพลงที่คุณมั่นใจที่สุดได้เลยครับ!"
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Genre Selector Cards -->
+                <h3 class="text-base sm:text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-2">
+                    <span>🎯</span> เลือกหมวดหมู่แนวเพลงประจำรอบนี้:
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- T-Pop Card -->
+                    <button onclick="startGame('tpop')" class="group text-left p-5 rounded-2xl glass-card border border-white/10 hover:border-pink-500/60 hover:bg-pink-500/10 transition-all duration-300 transform hover:-translate-y-1 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 text-6xl opacity-10 group-hover:opacity-30 group-hover:scale-125 transition-all">🇹🇭</div>
+                        <div class="flex items-center gap-4 mb-2">
+                            <span class="text-3xl p-3 bg-pink-500/20 rounded-xl group-hover:scale-110 transition">🇹🇭</span>
+                            <div>
+                                <h4 class="text-lg font-bold text-white group-hover:text-pink-400 transition">T-POP & เพลงไทยฮิต</h4>
+                                <span class="text-xs text-pink-300/80 font-light">ป็อปไทยวัยรุ่น เพลงฮิตติดชาร์ต & ไวรัล</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 line-clamp-2">ทดสอบความเป๊ะเพลงไทยฮิตยุคใหม่ Paper Planes, NONT TANONT, BUS, 4EVE ฯลฯ</p>
+                    </button>
+
+                    <!-- Rock 90s Card -->
+                    <button onclick="startGame('rock90')" class="group text-left p-5 rounded-2xl glass-card border border-white/10 hover:border-purple-500/60 hover:bg-purple-500/10 transition-all duration-300 transform hover:-translate-y-1 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 text-6xl opacity-10 group-hover:opacity-30 group-hover:scale-125 transition-all">🎸</div>
+                        <div class="flex items-center gap-4 mb-2">
+                            <span class="text-3xl p-3 bg-purple-500/20 rounded-xl group-hover:scale-110 transition">🎸</span>
+                            <div>
+                                <h4 class="text-lg font-bold text-white group-hover:text-purple-400 transition">ROCK & ตำนานยุค 90-2000s</h4>
+                                <span class="text-xs text-purple-300/80 font-light">ร็อกไทยระดับขึ้นหิ้ง วงฮิตยุคตลับเทป</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 line-clamp-2">สาวกร็อกตลับเทป LOSO, Silly Fools, Bodyslam, Big Ass ต้องไม่พลาด!</p>
+                    </button>
+
+                    <!-- K-Pop Card -->
+                    <button onclick="startGame('kpop')" class="group text-left p-5 rounded-2xl glass-card border border-white/10 hover:border-cyan-500/60 hover:bg-cyan-500/10 transition-all duration-300 transform hover:-translate-y-1 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 text-6xl opacity-10 group-hover:opacity-30 group-hover:scale-125 transition-all">🇰🇷</div>
+                        <div class="flex items-center gap-4 mb-2">
+                            <span class="text-3xl p-3 bg-cyan-500/20 rounded-xl group-hover:scale-110 transition">🇰🇷</span>
+                            <div>
+                                <h4 class="text-lg font-bold text-white group-hover:text-cyan-400 transition">K-POP & เกาหลีฮิตชาร์ต</h4>
+                                <span class="text-xs text-cyan-300/80 font-light">ไอดอลเกาหลีระดับโลก & ไวรัลแดนซ์</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 line-clamp-2">สาวก K-Pop BTS, BLACKPINK, NewJeans, aespa มาทายกัน!</p>
+                    </button>
+
+                    <!-- International Card -->
+                    <button onclick="startGame('global')" class="group text-left p-5 rounded-2xl glass-card border border-white/10 hover:border-amber-500/60 hover:bg-amber-500/10 transition-all duration-300 transform hover:-translate-y-1 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 text-6xl opacity-10 group-hover:opacity-30 group-hover:scale-125 transition-all">🌍</div>
+                        <div class="flex items-center gap-4 mb-2">
+                            <span class="text-3xl p-3 bg-amber-500/20 rounded-xl group-hover:scale-110 transition">🌍</span>
+                            <div>
+                                <h4 class="text-lg font-bold text-white group-hover:text-amber-400 transition">สากล / GLOBAL HITS</h4>
+                                <span class="text-xs text-amber-300/80 font-light">เพลงฮิตติดชาร์ต Billboard & Spotify</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 line-clamp-2">จัดเต็มเพลงสากลติดหู Ed Sheeran, Taylor Swift, Bruno Mars, The Weeknd</p>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 2. MAIN GAME QUIZ SCREEN ================= -->
+        <section id="screen-quiz" class="w-full hidden transition-all duration-500">
+            <!-- Game Top Status Bar -->
+            <div class="glass-card rounded-2xl p-4 mb-4 flex items-center justify-between border border-white/10 shadow-lg">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-400">คำถามข้อที่:</span>
+                    <span id="question-badge" class="px-3 py-1 rounded-lg bg-pink-500/20 text-pink-300 font-bold border border-pink-500/30 text-sm sm:text-base">
+                        1 / 5
+                    </span>
+                    <span id="genre-badge" class="hidden sm:inline-block text-xs px-2.5 py-1 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                        T-POP
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400">คะแนนรวม:</span>
+                        <span id="score-counter" class="text-xl sm:text-2xl font-black text-amber-400 neon-text-gold">
+                            0
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Host Chat / Avatar Box -->
+            <div class="glass-panel rounded-3xl p-5 sm:p-6 mb-4 shadow-xl border border-purple-500/30">
+                <div class="flex items-start gap-3 sm:gap-4">
+                    <div class="relative flex-shrink-0">
+                        <div id="host-avatar" class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-2xl sm:text-3xl shadow-md transition-transform duration-300">
+                            🎙️
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-pink-400 uppercase tracking-wider">พิธีกรดีเจบอท</span>
+                            <span id="hint-status-tag" class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">คำใบ้ระดับ 1 (ยากสุด)</span>
+                        </div>
+                        <p id="host-speech" class="text-sm sm:text-base text-slate-100 font-medium leading-relaxed">
+                            "มาเริ่มข้อที่ 1 กันครับ! อ่านคำใบ้ยากสุดนี้แล้วลองทายดูสิครับ!"
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hint Cards Stack Deck -->
+            <div class="space-y-3 mb-5">
+                <!-- Hint 1 Card (Hard) -->
+                <div id="hint-card-1" class="glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-amber-500 transition-all duration-300 shadow-md">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                            <span>🔥</span> คำใบ้ที่ 1 (ระดับยาก - 50% ความมั่นใจ)
+                        </span>
+                        <span class="text-[10px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded border border-amber-500/20">เปิดแล้ว</span>
+                    </div>
+                    <p id="hint-text-1" class="text-sm sm:text-base text-slate-200 leading-relaxed font-light">
+                        กำลังโหลดคำใบ้...
+                    </p>
+                </div>
+
+                <!-- Hint 2 Card (Medium) -->
+                <div id="hint-card-2" class="glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-slate-600 opacity-50 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                            <span>⚡</span> คำใบ้ที่ 2 (ระดับปานกลาง)
+                        </span>
+                        <span id="hint-status-2" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">ยังไม่เปิด</span>
+                    </div>
+                    <p id="hint-text-2" class="text-sm sm:text-base text-slate-400 italic">
+                        🔒 กดปุ่ม "ขอคำใบ้เพิ่ม" เพื่อปลดล็อกคำใบ้นี้...
+                    </p>
+                </div>
+
+                <!-- Hint 3 Card (Easy) -->
+                <div id="hint-card-3" class="glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-slate-600 opacity-50 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                            <span>💡</span> คำใบ้ที่ 3 (ระดับง่ายสุด - ท่อนฮุก/สัญลักษณ์)
+                        </span>
+                        <span id="hint-status-3" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">ยังไม่เปิด</span>
+                    </div>
+                    <p id="hint-text-3" class="text-sm sm:text-base text-slate-400 italic">
+                        🔒 กดปุ่ม "ขอคำใบ้เพิ่ม" อีกครั้งเพื่อเปิดคำใบ้ง่ายสุด...
+                    </p>
+                </div>
+            </div>
+
+            <!-- Answer Submission Box -->
+            <div class="glass-panel rounded-3xl p-5 border border-white/10 shadow-2xl">
+                <form id="answer-form" onsubmit="handleAnswerSubmit(event)" class="space-y-3">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                        ✏️ พิมพ์คำตอบของคุณ (ชื่อเพลง หรือ ศิลปิน):
+                    </label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <div class="relative flex-1">
+                            <input type="text" id="answer-input" placeholder="พิมพ์ชื่อเพลง หรือชื่อศิลปินที่นี่..." 
+                                   class="w-full bg-slate-900/90 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm sm:text-base border border-white/20 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition shadow-inner"
+                                   autocomplete="off" required />
+                        </div>
+                        <button type="submit" id="btn-submit" class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold px-6 py-3 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 text-sm sm:text-base">
+                            <span>ส่งคำตอบ</span>
+                            <span>🚀</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Action Controls (Request Hint / Give Up) -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mt-4 pt-3 border-t border-white/10">
+                    <button id="btn-more-hint" onclick="requestMoreHint()" class="glass-card hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2">
+                        <span>🔍 ขอคำใบ้เพิ่ม (ระดับถัดไป)</span>
+                    </button>
+
+                    <button id="btn-give-up" onclick="giveUpQuestion()" class="glass-card hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-2 rounded-xl text-xs font-medium transition flex items-center gap-1.5 opacity-80 hover:opacity-100">
+                        <span>🏳️ ยอมแพ้ข้อนี้</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 3. ANSWER FEEDBACK MODAL ================= -->
+        <div id="modal-feedback" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden transition-opacity duration-300 opacity-0">
+            <div id="modal-content" class="glass-panel w-full max-w-md rounded-3xl p-6 sm:p-8 text-center border border-white/20 shadow-2xl transform scale-95 transition-transform duration-300">
+                <div id="feedback-icon-bg" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 shadow-xl">
+                    🎉
+                </div>
+                <h3 id="feedback-title" class="text-2xl font-extrabold mb-2 text-white">ถูกต้องนะครับ!</h3>
+                
+                <div class="bg-slate-900/60 rounded-2xl p-4 mb-5 border border-white/10 text-left">
+                    <div class="text-xs text-slate-400 mb-1">เฉลยเพลงประจำข้อนี้:</div>
+                    <div id="feedback-song" class="text-lg font-bold text-pink-400">ชื่อเพลง - ศิลปิน</div>
+                    <div id="feedback-detail" class="text-xs text-slate-300 mt-2 font-light leading-relaxed">ข้อมูลเสริมของเพลงนี้...</div>
+                </div>
+
+                <div class="flex items-center justify-between bg-purple-950/40 p-3 rounded-xl mb-6 border border-purple-500/30">
+                    <span class="text-xs text-slate-300">คะแนนที่คุณได้รับ:</span>
+                    <span id="feedback-points" class="text-base font-bold text-amber-400">+1 คะแนน! 🌟</span>
+                </div>
+
+                <button id="btn-next-q" onclick="closeFeedbackModal()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3.5 rounded-xl text-base shadow-lg shadow-cyan-500/25 transition transform hover:scale-[1.02]">
+                    ลุยข้อถัดไป ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= 4. FINAL SCORE SUMMARY SCREEN ================= -->
+        <section id="screen-result" class="w-full hidden transition-all duration-500">
+            <div class="glass-panel rounded-3xl p-6 sm:p-10 text-center shadow-2xl border border-purple-500/40 relative overflow-hidden">
+                <!-- Glowing Backdrop Spot -->
+                <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-72 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 p-[3px] mb-4 shadow-xl shadow-pink-500/30">
+                    <div class="w-full h-full bg-brand-dark rounded-full flex items-center justify-center text-4xl sm:text-5xl animate-bounce-subtle">
+                        🏆
+                    </div>
+                </div>
+
+                <h2 class="text-2xl sm:text-4xl font-black bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent mb-1">
+                    สรุปผลการแข่งขัน!
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-400 mb-6">คุณได้ทำแบบทดสอบจบครบทั้ง 5 ข้อเรียบร้อยแล้ว</p>
+
+                <!-- Big Score Card -->
+                <div class="glass-card max-w-sm mx-auto rounded-2xl p-6 mb-6 border border-white/10 shadow-inner">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest font-semibold">คะแนนรวมสุทธิ</span>
+                    <div class="flex items-center justify-center gap-1 my-2">
+                        <span id="final-score" class="text-5xl sm:text-6xl font-black text-amber-400 neon-text-gold">5</span>
+                        <span class="text-2xl text-slate-500 font-light">/ 5</span>
+                    </div>
+                    <div id="final-rank-tag" class="inline-block px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-pink-500/20 text-pink-300 border border-pink-500/40 mt-1">
+                        👑 ระดับ: พระเจ้าแห่งวงการเพลง!
+                    </div>
+                </div>
+
+                <!-- Host Verdict Speech -->
+                <div class="glass-card max-w-md mx-auto rounded-2xl p-4 mb-8 text-left flex items-start gap-3 border border-purple-500/30">
+                    <span class="text-3xl">🎙️</span>
+                    <div>
+                        <div class="text-xs font-bold text-pink-400">ดีเจบอท สรุปผลงานของคุณ:</div>
+                        <p id="final-host-speech" class="text-xs sm:text-sm text-slate-200 mt-1 leading-relaxed">
+                            "สุดยอดมากๆ ครับ! คุณตอบถูกครบทุกข้อแบบนี้ สมตำแหน่งแฟนพันธุ์แท้ตัวจริงเสียงจริง!"
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Play Again / Change Category Buttons -->
+                <div class="flex flex-col sm:flex-row justify-center gap-3 max-w-md mx-auto">
+                    <button onclick="restartSameCategory()" class="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3.5 px-6 rounded-xl text-sm transition shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2">
+                        <span>🔄 เล่นหมวดเดิมอีกครั้ง</span>
+                    </button>
+                    <button onclick="showCategoryScreen()" class="flex-1 glass-card hover:bg-white/10 text-white font-bold py-3.5 px-6 rounded-xl text-sm transition border border-white/15 flex items-center justify-center gap-2">
+                        <span>🎯 เปลี่ยนแนวเพลง</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 w-full text-center py-4 text-xs text-slate-500 font-light">
+        <p>© 2026 แฟนพันธุ์แท้ดนตรี Mini-Game. Built for Music Lovers with Interactive AI Host.</p>
+    </footer>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        /* -------------------------------------------------------------
+         * 1. WEB AUDIO SYNTHESIZER (NO EXTERNAL AUDIO DEPENDENCIES)
+         * ------------------------------------------------------------- */
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('audio-icon');
+            const text = document.getElementById('audio-text');
+            if (soundEnabled) {
+                icon.innerText = '🔊';
+                text.innerText = 'เปิดเสียง';
+                playSfx('click');
+            } else {
+                icon.innerText = '🔇';
+                text.innerText = 'ปิดเสียง';
+            }
+        }
+
+        function playSfx(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                const now = ctx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'hint') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.setValueAtTime(500, now + 0.08);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'correct') {
+                    // Upbeat arpeggio (C5 - E5 - G5 - C6)
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = ctx.createOscillator();
+                        const noteGain = ctx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(ctx.destination);
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        noteGain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                        noteGain.gain.linearRampToValueAtTime(0.01, now + idx * 0.08 + 0.2);
+                        noteOsc.start(now + idx * 0.08);
+                        noteOsc.stop(now + idx * 0.08 + 0.2);
+                    });
+                } else if (type === 'wrong') {
+                    // Sad buzz drop
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'victory') {
+                    // Fanfare chords
+                    const chord = [440, 554.37, 659.25, 880];
+                    chord.forEach((freq) => {
+                        const noteOsc = ctx.createOscillator();
+                        const noteGain = ctx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(ctx.destination);
+                        noteOsc.type = 'triangle';
+                        noteOsc.frequency.setValueAtTime(freq, now);
+                        noteGain.gain.setValueAtTime(0.15, now);
+                        noteGain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+                        noteOsc.start(now);
+                        noteOsc.stop(now + 0.8);
+                    });
+                }
+            } catch (e) {
+                console.warn('Audio play error:', e);
+            }
+        }
+
+        /* -------------------------------------------------------------
+         * 2. QUESTIONS DATA BANK (5 Questions per genre)
+         * ------------------------------------------------------------- */
+        const musicDatabase = {
+            tpop: [
+                {
+                    songTitle: "ทรงอย่างแบด (Bad Boy)",
+                    artist: "Paper Planes",
+                    keywords: ["ทรงอย่างแบด", "bad boy", "paper planes", "เปเปอร์เพลนส์", "เปเปอร์ เพลนส์", "แบดบอย"],
+                    hints: [
+                        "เพลงฮิตระดับปรากฏการณ์ยอดวิวหลายสิบล้านในปี 2022 ดนตรีร็อกป็อป-พังก์บีตติดหู",
+                        "เพลงนี้สร้างตำนานกลายเป็น 'เพลงชาติฟันน้ำนม' ที่เด็กอนุบาลทั้งประเทศร้องตามได้กระหึ่ม",
+                        "ท่อนฮุกจำง่ายร้องว่า: 'ทรงอย่างแบด แซดอย่างบอย เธอไม่รักฉันก็คงต้องปล่อย...'"
+                    ],
+                    detail: "ผลงานโดยวง Paper Planes (ฮาย & เซ็น) สร้างปรากฏการณ์ห้างแตกและเปลี่ยนคอนเสิร์ตร็อกให้กลายเป็นสนามเด็กเล่น!"
+                },
+                {
+                    songTitle: "พิง",
+                    artist: "NONT TANONT (นนท์ ธนนท์)",
+                    keywords: ["พิง", "นนท์", "นนท์ ธนนท์", "nont", "nont tanont", "พิง นนท์"],
+                    hints: [
+                        "เพลงรักสไตล์ R&B อบอุ่นสุดซึ้งประกอบละครดังปี 2021 แต่งเนื้อร้องและทำนองโดย แอ้ม อัจฉริยา",
+                        "ขับร้องโดยนักร้องชายเสียงทรงพลังดีกรีแชมป์รายการร้องเพลง ผู้มีเอกลักษณ์สวมแว่นตาประจำ",
+                        "ท่อนฮุกร้องว่า: 'ทิ้งตัวลงนิ่งๆ นั่งข้างๆ ฉัน ให้ฉันได้ดูแลเธอ ให้ฉันได้เป็นที่...'"
+                    ],
+                    detail: "เพลงรักอุ่นหัวใจที่กวาดร้อยล้านวิวบน YouTube และครองอันดับ 1 ทุกชาร์ต radio ในไทย"
+                },
+                {
+                    songTitle: "เลือดกรุ๊ปบี (B Blood Type)",
+                    artist: "Chrrissa (เอิ้ก ชาลิสา)",
+                    keywords: ["เลือดกรุ๊ปบี", "เลือดกรุ๊ป b", "b blood type", "เอิ้ก ชาลิสา", "เอิ้ก", "ชาลิสา"],
+                    hints: [
+                        "เพลงไวรัลสุดปังปี 2023 ที่นำเรื่องความเชื่อ กรุ๊ปเลือด และโชคชะตาความรักมาแต่งเป็นเพลงสุดกวน",
+                        "ร้องโดยบล็อกเกอร์/ยูทูบเบอร์สายฮาเจ้าของช่อง 'Eclair เอิ้ก ชาลิสา'",
+                        "ท่อนฮุกเปิดคำถามติดปากว่า: 'ต้องมีเคมีตรงกันขนาดไหน... หรือต้องเกิดช้ากว่านี้ หรือต้อง...'"
+                    ],
+                    detail: "กลายเป็นวลีฮิตติดปากคนทั้งเมือง เวลาทำอะไรผิดพลาดมักจะอ้างว่า 'คงเป็นเพราะเลือดกรุ๊ป B'"
+                },
+                {
+                    songTitle: "ซ่อนกลิ่น",
+                    artist: "PALMY (ปาล์มมี่)",
+                    keywords: ["ซ่อนกลิ่น", "ปาล์มมี่", "palmy"],
+                    hints: [
+                        "เพลงป็อปอินดี้เนื้อหาซึ้งๆ เปรียบเทียบความทรงจำความรักในอดีตกับกลิ่นหอมของดอกไม้ไทยชนิดหนึ่ง",
+                        "ขับร้องโดยศิลปินหญิงที่มีเอกลักษณ์เฉพาะตัว ชอบเดินเท้าเปล่าบนเวทีคอนเสิร์ต",
+                        "ท่อนฮุกร้องว่า: 'หอมกลิ่นดอกไม้หอม เคยดมดอมยามเช้า... ยังคงหอมซาบซึ้งใจ อยู่ในทรงจำ'"
+                    ],
+                    detail: "เพลงคุณภาพระดับมาสเตอร์พีซของ ปาล์มมี่ พร้อม MV สุดประทับใจที่นำแสดงโดย เบลล่า ราณี"
+                },
+                {
+                    songTitle: "พิจารณา (Consider)",
+                    artist: "Musketeers ft. MAIYARAP",
+                    keywords: ["พิจารณา", "musketeers", "maiyarap", "มัสเกตเทียส์", "ไมยราพ"],
+                    hints: [
+                        "เพลงป็อปจังหวะฟีลกู้ดชวนยิ้มปี 2022 ที่มีท่อนแร็ปติดหูร่วมร้องระหว่างวงรุ่นเก๋ากับแร็ปเปอร์ชื่อดัง",
+                        "วงเจ้าของเพลงนี้มีผลงานฮิตในอดีตอย่าง 'ของขวัญ' และ 'อยากมองเธอในแง่ดี'",
+                        "ท่อนฮุกร้องว่า: 'อยากให้เธอพิจารณา... ลองมองมาที่ฉันหน่อย ได้โปรดอย่าปล่อยให้ฉันรอเก้อ'"
+                    ],
+                    detail: "การคัมแบ็กสุดยิ่งใหญ่ของ Musketeers ร่วมงานกับ MAIYARAP ดนตรีฟังสบายครองใจคนฟังทุกยุค"
+                }
+            ],
+            rock90: [
+                {
+                    answerTitle: "ซมซาน",
+                    artist: "LOSO (โลโซ)",
+                    keywords: ["ซมซาน", "loso", "โลโซ", "เสก", "เสก โลโซ", "sek loso"],
+                    hints: [
+                        "เพลงร็อกระดับตำนานยุค 90 ที่ขึ้นต้นด้วยเสียงตีคอร์ดกีตาร์โปร่งอันเป็นเอกลักษณ์ นักดนตรีทุกคนต้องฝึกเล่น",
+                        "ผลงานสร้างชื่อของวงร็อก 3 ชิ้น หัวหน้าวงและมือกีตาร์ชื่อ 'เสก'",
+                        "ท่อนฮุกร้องว่า: 'เกิดมาไม่เคยเจ็บช้ำอย่างนี้ เกิดมาไม่เคยรักใครมาก่อน...'"
+                    ],
+                    detail: "เพลงร็อกอมตะตลอดกาลของไทย ไม่ว่าจะผ่านไปกี่ยุคสมัยเมื่อขึ้นคอร์ดแรกทุกคนก็ร้องตามได้ทันที!"
+                },
+                {
+                    songTitle: "วัดใจ",
+                    artist: "Silly Fools (ซิลลี่ ฟูลส์)",
+                    keywords: ["วัดใจ", "silly fools", "ซิลลี่ฟูลส์", "ซิลลี่ ฟูลส์", "โต ซิลลี่ฟูลส์"],
+                    hints: [
+                        "เพลงร็อกพลังสูงดนตรีดุดันสไตล์โมเดิร์นร็อกยุค 2000s มีไลน์เบสชวนโดดโดดเด่นมาก",
+                        "นักร้องนำในยุคนั้นคือ 'บังโต' ผู้มีน้ำเสียงว้ากและทรงพลังระดับแถวหน้าของเมืองไทย",
+                        "ท่อนฮุกร้องว่า: 'ตอบมาคำเดียวว่าจะอยู่หรือไป... วัดกันไปเลยให้รู้กันไป!'"
+                    ],
+                    detail: "เพลงแห่งการปลุกใจและความท้าทาย ถูกนำไปใช้เปิดในงานแข่งกีฬาและงานคอนเสิร์ตร็อกนับไม่ถ้วน"
+                },
+                {
+                    songTitle: "ยาพิษ",
+                    artist: "Bodyslam (บอดี้สแลม)",
+                    keywords: ["ยาพิษ", "bodyslam", "บอดี้สแลม", "ตูน bodyslam", "ตูน บอดี้สแลม"],
+                    hints: [
+                        "เพลงเปิดตัวอัลบั้ม Save My Life (ปี 2007) เสียงสังเคราะห์ลึกลับก่อนจะตัดเข้าดนตรีดุดันหนักหน่วง",
+                        "วงร็อกมหาชนอันดับ 1 ของไทย ร้องนำโดย 'ตูน อาทิวราห์'",
+                        "ท่อนฮุกร้องว่า: 'คำพูดร้อยคำ ที่เอ่ยคำสัญญา... แต่สุดท้ายกลายเป็น...'"
+                    ],
+                    detail: "เพลงที่ปฏิวัติวงการร็อกไทยด้วยดนตรีอิเล็กทรอนิกส์ผสมร็อก พร้อมท่าเต้นไมค์สุดจี๊ดของพี่ตูน"
+                },
+                {
+                    songTitle: "เพียงพอ",
+                    artist: "POTATO (โปเตโต้)",
+                    keywords: ["เพียงพอ", "potato", "โปเตโต้", "ปั๊บ potato", "ปั๊บ โปเตโต้"],
+                    hints: [
+                        "เพลงร็อกจังหวะสนุกที่ชวนคนฟังโดดกันทั้งฮอลล์ Released ในอัลบั้ม Life ปี 2005",
+                        "นักร้องนำของวงนี้คือ 'ปั๊บ พัฒน์ชัย'",
+                        "ท่อนฮุกร้องว่า: 'ขอบคุณที่รักกัน ขอบคุณทุกครั้งที่ตื่นมาแล้วพบว่า... มีเธออยู่ข้างๆ'"
+                    ],
+                    detail: "เพลงร็อกจังหวะฟีลกู้ดบวกกับความรักอันบริสุทธิ์ กลายเป็นเพลงประจำวง Potato ที่ต้องเล่นทุกคอนเสิร์ต"
+                },
+                {
+                    songTitle: "ใจนักเลง",
+                    artist: "พงษ์พัฒน์ วชิรบรรจง",
+                    keywords: ["ใจนักเลง", "พงษ์พัฒน์", "อ๊อฟ พงษ์พัฒน์", "พงษ์พัฒน์ วชิรบรรจง"],
+                    hints: [
+                        "เพลงร็อกอกหักสุดคลาสสิกยุค 90 ที่แสดงสปีริตความเท่ ยอมรับความผิดหวังแบบผู้ชายอกสามศอก",
+                        "ขับร้องโดยศิลปินร็อกและนักแสดง/ผู้กำกับมากฝีมือ 'อ๊อฟ พงษ์พัฒน์'",
+                        "ท่อนฮุกร้องว่า: 'ให้เธอได้กับเขา และขอลาเจ็บแค่นี้... ให้มันเสียไป'"
+                    ],
+                    detail: "เพลงร็อกอกหักสายแมนๆ ที่ถูกนำมาร้องคัฟเวอร์มากที่สุดเพลงหนึ่งในประวัติศาสตร์เพลงไทย"
+                }
+            ],
+            kpop: [
+                {
+                    songTitle: "Dynamite",
+                    artist: "BTS (บังทันโซนยอนดัน)",
+                    keywords: ["dynamite", "bts", "บังทัน", "บีทีเอส", "ไดนาไมต์"],
+                    hints: [
+                        "เพลงภาษาอังกฤษเพลงแรกของวงนี้ที่สร้างประวัติศาสตร์ทะยานขึ้นอันดับ 1 บนชาร์ต Billboard Hot 100",
+                        "ผลงานจากบอยแบนด์ K-Pop ระดับปรากฏการณ์โลกที่มีแฟนคลับชื่อ 'ARMY'",
+                        "ท่อนฮุกร้องว่า: 'Cause I-I-I'm in the stars tonight, So watch me bring the fire and set the night alight...'"
+                    ],
+                    detail: "เพลงดิสโก้ป็อปสดใสที่มอบพลังบวกให้คนทั้งโลกในช่วงวิกฤต พร้อมเข้าชิงรางวัล Grammy Awards"
+                },
+                {
+                    songTitle: "DDU-DU DDU-DU",
+                    artist: "BLACKPINK",
+                    keywords: ["ddu-du ddu-du", "ddu du ddu du", "blackpink", "แบล็กพิงก์", "แบล็คพิงค์", "ตู่ดูตู่ดู"],
+                    hints: [
+                        "เพลงฮิตปี 2018 ที่มีท่าเต้นยิงปืนสุดไวรัล มียอดวิวบน YouTube ทะลุมากกว่า 2,000 ล้านวิว!",
+                        "ขับร้องโดยเกิร์ลกรุ๊ป 4 สาวระดับโลก (จีซู, เจนนี่, โรเซ่, ลิซ่า)",
+                        "มีเสียงเอฟเฟกต์เลียนเสียงปืนในท่อนฮุกร้องว่า: 'Hit you with that...!'"
+                    ],
+                    detail: "เพลงที่ส่งให้ BLACKPINK ก้าวขึ้นสู่เกิร์ลกรุ๊ปอันดับ 1 ของโลกอย่างสมศักดิ์ศรี"
+                },
+                {
+                    songTitle: "Hype Boy",
+                    artist: "NewJeans",
+                    keywords: ["hype boy", "hypeboy", "newjeans", "นิวยีนส์", "ไฮป์บอย"],
+                    hints: [
+                        "เพลงเดบิวต์ปี 2022 สไตล์ Y2K ที่กลายเป็นมีมไวรัลคำถามสุดฮิต 'คุณกำลังฟังเพลงอะไรอยู่? - Hype Boy ค่ะ'",
+                        "ขับร้องโดยเกิร์ลกรุ๊ปน้องใหม่มาแรงภายใต้ค่าย ADOR / HYBE",
+                        "ท่อนฮุกร้องว่า: 'Cause I know what you like boy, You're my...'"
+                    ],
+                    detail: "เพลงป็อป R&B ยุค 2000s ที่ชุบชีวิตแฟชั่น Y2K ให้กลับมาฮิตทั่วบ้านทั่วเมือง"
+                },
+                {
+                    songTitle: "Gangnam Style",
+                    artist: "PSY (ไซ)",
+                    keywords: ["gangnam style", "กังนัมสไตล์", "psy", "ไซ", "กังนัม สไตล์"],
+                    hints: [
+                        "เพลง K-Pop ท่าเต้นขี่ม้าสุดฮาที่เคยทลายสถิติยอดวิว YouTube สูงสุดในโลกยุคแรกๆ เมื่อปี 2012",
+                        "ขับร้องโดยศิลปินชายร่างอวบอารมณ์ดีผู้มีสไตล์การแสดงสุดมัน",
+                        "ท่อนฮุกร้องตะโกนว่า: 'Oppa is... Style!'"
+                    ],
+                    detail: "เพลงแรกในประวัติศาสตร์ที่ยอดวิว YouTube ทะลุ 1,000 ล้านวิว เปิดประตู K-Pop สู่คนทั่วโลก"
+                },
+                {
+                    songTitle: "Next Level",
+                    artist: "aespa (เอสป้า)",
+                    keywords: ["next level", "aespa", "เอสป้า", "เน็กเลเวล"],
+                    hints: [
+                        "เพลงสไตล์ไซเบอร์พังก์ปี 2021 ที่มีโครงสร้างเพลงหักมุมเปลี่ยนบีตกลางเพลงแบบสุดล้ำ",
+                        "วงเกิร์ลกรุ๊ปค่าย SM Entertainment ที่มีคอนเซ็ปต์อวตารเสมือนจริงในโลก KWANGYA",
+                        "ท่อนฮุกมีท่าเต้นงอแขนรูปตัว L ร้องว่า: 'I'm on the... Yeah 절대로 손을 놓지 คาจี มา'"
+                    ],
+                    detail: "เพลงไวรัลสุดล้ำที่คนเกาหลีใต้เต้นตามกันทั้งประเทศและคว้ารางวัล Song of the Year"
+                }
+            ],
+            global: [
+                {
+                    songTitle: "Shape of You",
+                    artist: "Ed Sheeran",
+                    keywords: ["shape of you", "ed sheeran", "เอ็ด ชีรัน", "เอ็ดชีรัน", "เชปออฟยู"],
+                    hints: [
+                        "เพลงป็อปจังหวะ Marimba สดใสปี 2017 ที่มียอดสตรีมบน Spotify สูงสุดติดอันดับโลกมากกว่า 3,000 ล้านครั้ง",
+                        "ร้องโดยศิลปินชายชาวอังกฤษผมสีส้ม ผู้ชอบสะพายกีตาร์โปร่งและเล่น Loop Pedal บนเวที",
+                        "ท่อนฮุกร้องว่า: 'I'm in love with the... We push and pull like a magnet do'"
+                    ],
+                    detail: "เพลงที่ครองอันดับ 1 บนชาร์ตทั่วโลกยาวนานที่สุดเพลงหนึ่ง ผลงานระดับขึ้นหิ้งของ Ed Sheeran"
+                },
+                {
+                    songTitle: "Blinding Lights",
+                    artist: "The Weeknd",
+                    keywords: ["blinding lights", "the weeknd", "เดอะวีกเอนด์", "เดอะ วีกเอนด์", "ไบลน์ดิง ไลตส์"],
+                    hints: [
+                        "เพลงสไตล์ Synthwave ยุค 80s ฮิตถล่มทลายในปี 2020 ครองอันดับชาร์ตยาวนานที่สุดในประวัติศาสตร์ Billboard Hot 100",
+                        "ขับร้องโดยศิลปินชายสวมสูทสีแดงสุดเท่ เจ้าของเสียงหลบอันทรงเสน่ห์",
+                        "ท่อนฮุกร้องว่า: 'I said, ooh, I'm blinded by the lights. No, I can't sleep until I feel your touch...'"
+                    ],
+                    detail: "เพลงฮิตยุค 80s รีไววัลที่ได้แสดงโชว์ช่วงพักครึ่ง Super Bowl Halftime Show สุดอลังการ"
+                },
+                {
+                    songTitle: "Stay",
+                    artist: "The Kid LAROI & Justin Bieber",
+                    keywords: ["stay", "justin bieber", "kid laroi", "จัสติน", "จัสติน บีเบอร์", "สเตย์"],
+                    hints: [
+                        "เพลงป็อปเร็วบีตติดหูปี 2021 ที่ฟีเจอริ่งระหว่างวัยรุ่นออสเตรเลียและป็อปสตาร์ระดับโลก",
+                        "ร่วมร้องโดยศิลปินหนุ่มชื่อดังเจ้าของเพลง 'Baby' และ 'Sorry'",
+                        "ท่อนฮุกร้องว่า: 'I do the same thing I told you that I never would... I need you to stay, need you to stay, hey'"
+                    ],
+                    detail: "เพลงความยาวเพียง 2 นาทีเศษ แต่ฮิตติดชาร์ตทั่วโลกยาวนานข้ามปี"
+                },
+                {
+                    songTitle: "Flowers",
+                    artist: "Miley Cyrus",
+                    keywords: ["flowers", "miley cyrus", "ไมลีย์ ไซรัส", "ไมลีย์", "ฟลาวเวอร์ส"],
+                    hints: [
+                        "เพลงดิสโก้ป็อปปี 2023 ที่มีเนื้อหาชวนให้รักตัวเอง ไม่ต้องง้อผู้ชาย เพราะซื้อดอกไม้ให้ตัวเองได้",
+                        "ร้องโดยอดีตดาราเด็กดิสนีย์ฮันนาห์ มอนทานา ผู้มีน้ำเสียงแหบเสน่ห์ทรงพลัง",
+                        "ท่อนฮุกร้องตอบโต้เพลง Bruno Mars ว่า: 'I can buy myself... Write my name in the sand...'"
+                    ],
+                    detail: "เพลงกวาดรางวัล Grammy Awards 2024 และกลายเป็นเพลงชาติของผู้หญิงยุคใหม่ทั่วโลก"
+                },
+                {
+                    songTitle: "Bohemian Rhapsody",
+                    artist: "Queen",
+                    keywords: ["bohemian rhapsody", "queen", "ควีน", "โบฮีเมียน แรปโซดี"],
+                    hints: [
+                        "เพลงร็อกออเปร่าระดับขึ้นหิ้งปี 1975 ความยาวกว่า 6 นาที โดยไม่มีท่อนฮุกซ้ำแบบเพลงป็อปทั่วไป",
+                        "ผลงานของวงร็อกระดับตำนานจากอังกฤษ ร้องนำโดย Freddie Mercury",
+                        "ท่อนเปิดร้องแบบอากัปเปลาว่า: 'Is this the real life? Is this just fantasy?... Mama, just killed a man...'"
+                    ],
+                    detail: "หนึ่งในเพลงร็อกที่ยิ่งใหญ่ที่สุดตลอดกาลของมนุษยชาติ ถูกนำไปตั้งเป็นชื่อภาพยนตร์ชีวประวัติวง Queen"
+                }
+            ]
+        };
+
+        /* -------------------------------------------------------------
+         * 3. GAME STATE & LOGIC
+         * ------------------------------------------------------------- */
+        let currentGenre = 'tpop';
+        let questionList = [];
+        let currentQIndex = 0;
+        let score = 0;
+        let currentHintLevel = 1; // 1 (Hard), 2 (Medium), 3 (Easy)
+
+        // UI Element References
+        const screenCategory = document.getElementById('screen-category');
+        const screenQuiz = document.getElementById('screen-quiz');
+        const screenResult = document.getElementById('screen-result');
+        const modalFeedback = document.getElementById('modal-feedback');
+        const modalContent = document.getElementById('modal-content');
+
+        const questionBadge = document.getElementById('question-badge');
+        const genreBadge = document.getElementById('genre-badge');
+        const scoreCounter = document.getElementById('score-counter');
+        const hostAvatar = document.getElementById('host-avatar');
+        const hostSpeech = document.getElementById('host-speech');
+        const hintStatusTag = document.getElementById('hint-status-tag');
+
+        const hintCard1 = document.getElementById('hint-card-1');
+        const hintCard2 = document.getElementById('hint-card-2');
+        const hintCard3 = document.getElementById('hint-card-3');
+        const hintText1 = document.getElementById('hint-text-1');
+        const hintText2 = document.getElementById('hint-text-2');
+        const hintText3 = document.getElementById('hint-text-3');
+        const hintStatus2 = document.getElementById('hint-status-2');
+        const hintStatus3 = document.getElementById('hint-status-3');
+
+        const answerInput = document.getElementById('answer-input');
+        const btnMoreHint = document.getElementById('btn-more-hint');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        // Start Game with Selected Genre
+        function startGame(genreKey) {
+            playSfx('click');
+            currentGenre = genreKey;
+            
+            // Randomize questions for high replayability
+            questionList = [...musicDatabase[genreKey]].sort(() => Math.random() - 0.5);
+            currentQIndex = 0;
+            score = 0;
+
+            // Update Header Genre Tag
+            const genreNames = {
+                tpop: 'T-POP',
+                rock90: 'ROCK 90s',
+                kpop: 'K-POP',
+                global: 'GLOBAL'
+            };
+            genreBadge.innerText = genreNames[genreKey] || 'MUSIC';
+
+            // Screen Transition
+            screenCategory.classList.add('hidden');
+            screenResult.classList.add('hidden');
+            screenQuiz.classList.remove('hidden');
+
+            renderCurrentQuestion();
+        }
+
+        // Render Active Question
+        function renderCurrentQuestion() {
+            currentHintLevel = 1;
+            const q = questionList[currentQIndex];
+
+            // Update Counter
+            questionBadge.innerText = `${currentQIndex + 1} / ${questionList.length}`;
+            scoreCounter.innerText = score;
+
+            // Reset Hints UI
+            hintText1.innerText = q.hints[0];
+            hintText2.innerText = `🔒 กดปุ่ม "ขอคำใบ้เพิ่ม" เพื่อปลดล็อกคำใบ้นี้...`;
+            hintText3.innerText = `🔒 กดปุ่ม "ขอคำใบ้เพิ่ม" อีกครั้งเพื่อเปิดคำใบ้ง่ายสุด...`;
+
+            hintCard2.className = "glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-slate-600 opacity-50 transition-all duration-300";
+            hintCard3.className = "glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-slate-600 opacity-50 transition-all duration-300";
+
+            hintStatus2.innerText = "ยังไม่เปิด";
+            hintStatus2.className = "text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded";
+            hintStatus3.innerText = "ยังไม่เปิด";
+            hintStatus3.className = "text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded";
+
+            btnMoreHint.style.display = 'inline-flex';
+            btnMoreHint.innerHTML = `<span>🔍 ขอคำใบ้เพิ่ม (ระดับ 2)</span>`;
+
+            // Reset Host Dialogue
+            hostAvatar.innerText = "🎙️";
+            hostSpeech.innerText = `"ข้อที่ ${currentQIndex + 1} มาแล้วครับ! อ่านคำใบ้ยากสุดคำใบ้แรกนี้ แล้วลองทายชื่อเพลงหรือศิลปินดูสิครับ!"`;
+            hintStatusTag.innerText = "คำใบ้ระดับ 1 (ยากสุด)";
+            hintStatusTag.className = "text-[11px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30";
+
+            // Clear Input
+            answerInput.value = '';
+            answerInput.focus();
+        }
+
+        // Request Next Hint
+        function requestMoreHint() {
+            const q = questionList[currentQIndex];
+
+            if (currentHintLevel === 1) {
+                currentHintLevel = 2;
+                playSfx('hint');
+
+                hintText2.innerText = q.hints[1];
+                hintCard2.className = "glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-cyan-500 opacity-100 transition-all duration-300 shadow-md";
+                hintStatus2.innerText = "เปิดแล้ว";
+                hintStatus2.className = "text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30";
+
+                btnMoreHint.innerHTML = `<span>💡 ขอคำใบ้เพิ่ม (ระดับ 3 - ง่ายสุด)</span>`;
+                hostAvatar.innerText = "🤔";
+                hostSpeech.innerText = `"ปลดล็อกคำใบ้ระดับปานกลางให้แล้วครับ! น่าจะพอคุ้นหูบ้างหรือยังครับ?"`;
+                hintStatusTag.innerText = "คำใบ้ระดับ 2 (ปานกลาง)";
+                hintStatusTag.className = "text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30";
+
+            } else if (currentHintLevel === 2) {
+                currentHintLevel = 3;
+                playSfx('hint');
+
+                hintText3.innerText = q.hints[2];
+                hintCard3.className = "glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-emerald-500 opacity-100 transition-all duration-300 shadow-md";
+                hintStatus3.innerText = "เปิดแล้ว";
+                hintStatus3.className = "text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30";
+
+                btnMoreHint.style.display = 'none'; // Max hint reached
+                hostAvatar.innerText = "💡";
+                hostSpeech.innerText = `"นี่คือคำใบ้ระดับง่ายที่สุดครับ! มีท่อนฮุกกับคีย์เวิร์ดเฉลยขนาดนี้ ต้องตอบถูกแล้วล่ะครับ!"`;
+                hintStatusTag.innerText = "คำใบ้ระดับ 3 (ง่ายสุด)";
+                hintStatusTag.className = "text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            }
+        }
+
+        // Fuzzy String Cleaning for Flexible Matching
+        function normalizeText(str) {
+            return str
+                .toLowerCase()
+                .replace(/\s+/g, '') // remove spaces
+                .replace(/[()\-.,'"!]/g, ''); // remove punctuation
+        }
+
+        // Handle Answer Submit Form
+        function handleAnswerSubmit(e) {
+            e.preventDefault();
+            const userRaw = answerInput.value.trim();
+            if (!userRaw) return;
+
+            const q = questionList[currentQIndex];
+            const cleanUser = normalizeText(userRaw);
+
+            // Check if user answer matches any keyword in data
+            const isCorrect = q.keywords.some(kw => {
+                const cleanKw = normalizeText(kw);
+                return cleanUser.includes(cleanKw) || cleanKw.includes(cleanUser);
+            });
+
+            if (isCorrect) {
+                score++;
+                playSfx('correct');
+                showFeedbackModal(true, q);
+            } else {
+                playSfx('wrong');
+                // Auto reveal next hint if available or give feedback
+                if (currentHintLevel < 3) {
+                    hostAvatar.innerText = "😅";
+                    hostSpeech.innerText = `"ยังไม่ถูกต้องครับ! แต่ไม่ต้องตกใจไป ลองอ่านคำใบ้เพิ่มสิครับ!"`;
+                    requestMoreHint();
+                } else {
+                    showFeedbackModal(false, q);
+                }
+            }
+        }
+
+        // Give Up Option
+        function giveUpQuestion() {
+            playSfx('wrong');
+            const q = questionList[currentQIndex];
+            showFeedbackModal(false, q, true);
+        }
+
+        // Show Feedback Dialog
+        function showFeedbackModal(isCorrect, question, gaveUp = false) {
+            const iconBg = document.getElementById('feedback-icon-bg');
+            const title = document.getElementById('feedback-title');
+            const song = document.getElementById('feedback-song');
+            const detail = document.getElementById('feedback-detail');
+            const pts = document.getElementById('feedback-points');
+
+            const fullTitle = question.songTitle ? `${question.songTitle} - ${question.artist}` : `${question.answerTitle} - ${question.artist}`;
+
+            song.innerText = fullTitle;
+            detail.innerText = question.detail;
+
+            if (isCorrect) {
+                iconBg.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-emerald-500/20";
+                iconBg.innerText = "🎉";
+                title.innerText = "ถูกต้องนะครับ!";
+                title.className = "text-2xl font-extrabold mb-2 text-emerald-400";
+                pts.innerText = "+1 คะแนน! 🌟";
+                pts.className = "text-base font-bold text-amber-400 neon-text-gold";
+                triggerMiniConfetti();
+            } else {
+                iconBg.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-rose-500/20";
+                iconBg.innerText = gaveUp ? "🏳️" : "❌";
+                title.innerText = gaveUp ? "ยอมแพ้ข้อนี้!" : "ยังไม่ถูกต้องครับ!";
+                title.className = "text-2xl font-extrabold mb-2 text-rose-400";
+                pts.innerText = "+0 คะแนน";
+                pts.className = "text-base font-bold text-slate-400";
+            }
+
+            modalFeedback.classList.remove('hidden');
+            setTimeout(() => {
+                modalFeedback.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeFeedbackModal() {
+            playSfx('click');
+            modalFeedback.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+
+            setTimeout(() => {
+                modalFeedback.classList.add('hidden');
+                currentQIndex++;
+                if (currentQIndex < questionList.length) {
+                    renderCurrentQuestion();
+                } else {
+                    finishGame();
+                }
+            }, 250);
+        }
+
+        // Finish Game & Show Results
+        function finishGame() {
+            playSfx('victory');
+            triggerVictoryConfetti();
+
+            screenQuiz.classList.add('hidden');
+            screenResult.classList.remove('hidden');
+
+            const finalScoreEl = document.getElementById('final-score');
+            const finalRankTag = document.getElementById('final-rank-tag');
+            const finalSpeech = document.getElementById('final-host-speech');
+
+            finalScoreEl.innerText = score;
+
+            if (score === 5) {
+                finalRankTag.innerText = "👑 ระดับ: พระเจ้าแห่งวงการเพลง!";
+                finalRankTag.className = "inline-block px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 mt-1 neon-text-gold";
+                finalSpeech.innerText = `"รอบนี้ได้คะแนนเต็ม 5/5! คุณคือแฟนพันธุ์แท้ดนตรีตัวจริง เสียงจริง รู้ลึกรู้จริงทุกรายละเอียดเพลงครับ!"`;
+            } else if (score >= 3) {
+                finalRankTag.innerText = "🎧 ระดับ: หูทองคำ สายฟังเพลงตัวจริง";
+                finalRankTag.className = "inline-block px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-pink-500/20 text-pink-300 border border-pink-500/40 mt-1";
+                finalSpeech.innerText = `"ฝีมือไม่ธรรมดาเลยครับ! ได้คะแนนสูงระดับหูทองคำ มีความรู้เรื่องเพลงรอบตัวดีเยี่ยมครับ!"`;
+            } else if (score >= 1) {
+                finalRankTag.innerText = "🎵 ระดับ: นักฟังเพลงเพลินๆ";
+                finalRankTag.className = "inline-block px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 mt-1";
+                finalSpeech.innerText = `"ทำได้ดีเลยครับ! ลองกลับไปฟังเพลงเพิ่มเติมอีกนิด รอบหน้าได้คะแนนเต็มแน่นอน!"`;
+            } else {
+                finalRankTag.innerText = "🎤 ระดับ: มือใหม่เพิ่งเข้าวงการ";
+                finalRankTag.className = "inline-block px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-slate-700 text-slate-300 border border-slate-600 mt-1";
+                finalSpeech.innerText = `"ไม่เป็นไรนะครับ! ดนตรีมีไว้ให้เราสนุก มาลองท้าทายใหม่อีกสักรอบนะครับ!"`;
+            }
+        }
+
+        function restartSameCategory() {
+            startGame(currentGenre);
+        }
+
+        function showCategoryScreen() {
+            playSfx('click');
+            screenResult.classList.add('hidden');
+            screenQuiz.classList.add('hidden');
+            screenCategory.classList.remove('hidden');
+        }
+
+        /* -------------------------------------------------------------
+         * 4. BACKGROUND CANVAS & CONFETTI SYSTEM
+         * ------------------------------------------------------------- */
+        const bgCanvas = document.getElementById('bg-canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const confettiCtx = confettiCanvas.getContext('2d');
+
+        let particles = [];
+        let confettiParticles = [];
+
+        function resizeCanvases() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
+
+        // Background Floating Musical Particle Notes
+        class Particle {
+            constructor() {
+                this.x = Math.random() * bgCanvas.width;
+                this.y = Math.random() * bgCanvas.height;
+                this.size = Math.random() * 14 + 10;
+                this.speedY = Math.random() * 0.8 + 0.2;
+                this.symbol = ['🎵', '🎶', '🎼', '✨', '🎸'][Math.floor(Math.random() * 5)];
+                this.opacity = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.y -= this.speedY;
+                if (this.y < -20) {
+                    this.y = bgCanvas.height + 20;
+                    this.x = Math.random() * bgCanvas.width;
+                }
+            }
+            draw() {
+                bgCtx.globalAlpha = this.opacity;
+                bgCtx.font = `${this.size}px sans-serif`;
+                bgCtx.fillText(this.symbol, this.x, this.y);
+            }
+        }
+
+        for (let i = 0; i < 25; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateBg() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        // Confetti Particle Class
+        class Confetti {
+            constructor() {
+                this.x = confettiCanvas.width / 2;
+                this.y = confettiCanvas.height / 2;
+                this.vx = (Math.random() - 0.5) * 12;
+                this.vy = (Math.random() - 0.8) * 14;
+                this.size = Math.random() * 8 + 4;
+                this.color = ['#ec4899', '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981'][Math.floor(Math.random() * 5)];
+                this.gravity = 0.3;
+                this.alpha = 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+                this.alpha -= 0.015;
+            }
+            draw() {
+                confettiCtx.globalAlpha = Math.max(0, this.alpha);
+                confettiCtx.fillStyle = this.color;
+                confettiCtx.beginPath();
+                confettiCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                confettiCtx.fill();
+            }
+        }
+
+        function triggerMiniConfetti() {
+            for (let i = 0; i < 40; i++) {
+                confettiParticles.push(new Confetti());
+            }
+        }
+
+        function triggerVictoryConfetti() {
+            for (let i = 0; i < 120; i++) {
+                confettiParticles.push(new Confetti());
+            }
+        }
+
+        function animateConfetti() {
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            for (let i = confettiParticles.length - 1; i >= 0; i--) {
+                const c = confettiParticles[i];
+                c.update();
+                c.draw();
+                if (c.alpha <= 0) {
+                    confettiParticles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(animateConfetti);
+        }
+        animateConfetti();
+    </script>
+</body>
+</html>

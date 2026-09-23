@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C Major Piano Note Falling Game</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Pulse animation for countdown */
+        @keyframes pulse-beat {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        .animate-beat {
+            animation: pulse-beat 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Key glow effect */
+        .key-active {
+            transform: translateY(4px) !important;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.4) !important;
+        }
+
+        /* Lane Background Grid */
+        .lane-border {
+            border-right: 1px dashed rgba(255, 255, 255, 0.08);
+        }
+        .lane-border:last-child {
+            border-right: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 overflow-x-hidden">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-4xl bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col h-[90vh] max-h-[850px] relative">
+        
+        <!-- Header / Game Bar -->
+        <header class="bg-slate-950/80 p-4 border-b border-slate-800 flex justify-between items-center z-10">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-xl font-bold">
+                    <i class="fa-solid fa-music"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white leading-tight">C Major Note Game</h1>
+                    <p class="text-xs text-slate-400">ฝึกทักษะการอ่านโน้ตเปียโน C Major</p>
+                </div>
+            </div>
+
+            <!-- Score & Progress Display -->
+            <div class="flex items-center space-x-6">
+                <div class="text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider">ข้อที่</div>
+                    <div class="text-xl font-bold text-indigo-400" id="current-question-text">0 / 10</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider">คะแนน</div>
+                    <div class="text-xl font-bold text-emerald-400" id="current-score-text">0</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Play Area Track & Canvas -->
+        <div class="relative flex-1 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950/40 overflow-hidden flex flex-col">
+            
+            <!-- Target Alignment Guidance Line -->
+            <div class="absolute bottom-2 left-0 right-0 h-1 bg-indigo-500/30 z-0 pointer-events-none"></div>
+
+            <!-- Falling Canvas / Track Area -->
+            <div id="track-container" class="relative flex-1 w-full flex">
+                <!-- 8 Columns representing 8 C Major Keys -->
+                <div class="flex-1 h-full lane-border relative" data-note="C4"></div>
+                <div class="flex-1 h-full lane-border relative" data-note="D4"></div>
+                <div class="flex-1 h-full lane-border relative" data-note="E4"></div>
+                <div class="flex-1 h-full lane-border relative" data-note="F4"></div>
+                <div class="flex-1 h-full lane-border relative" data-note="G4"></div>
+                <div class="flex-1 h-full lane-border relative" data-note="A4"></div>
+                <div class="flex-1 h-full lane-border relative" data-note="B4"></div>
+                <div class="flex-1 h-full lane-border relative" data-note="C5"></div>
+            </div>
+
+            <!-- 4-Beat Countdown Overlay -->
+            <div id="countdown-overlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 hidden">
+                <div id="countdown-number" class="text-8xl font-black text-indigo-400 drop-shadow-[0_0_25px_rgba(99,102,241,0.6)]">4</div>
+                <div class="text-lg text-slate-300 mt-4 font-light tracking-wide" id="countdown-label">เตรียมตัวเริ่มเกม...</div>
+            </div>
+
+            <!-- Feedback Notification Banner -->
+            <div id="feedback-banner" class="absolute top-6 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full font-bold text-sm shadow-lg border opacity-0 transition-all duration-300 pointer-events-none z-30">
+                ถูกต้อง! +1
+            </div>
+
+            <!-- Start Screen Overlay -->
+            <div id="start-screen" class="absolute inset-0 bg-slate-950/95 z-40 flex flex-col items-center justify-center p-6 text-center">
+                <div class="w-20 h-20 bg-indigo-600/20 rounded-full border border-indigo-500/40 flex items-center justify-center text-4xl text-indigo-400 mb-6 shadow-lg shadow-indigo-500/10">
+                    <i class="fa-solid fa-play ml-1"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-white mb-3">เรียนรู้โน้ตในคีย์ C Major</h2>
+                <p class="text-slate-300 max-w-md text-sm mb-6 leading-relaxed">
+                    จะมีโน้ตวิ่งลงมาจากด้านบนตามช่องเสียง <br>
+                    ก่อนเริ่มข้อแรกจะมีการนับจังหวะ <span class="text-amber-400 font-semibold">1 - 2 - 3 - 4</span> ให้เตรียมตัว<br>
+                    คลิกลิ่มเปียโนด้านล่างให้ตรงกับโน้ตก่อนที่โน้ตจะตกถึงพื้น! (ทั้งหมด 10 ข้อ)
+                </p>
+                
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-8 w-full max-w-md text-left text-xs text-slate-400 space-y-2">
+                    <div class="flex items-center space-x-2 text-indigo-300 font-semibold mb-1">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <span>ลิ่มเปียโนทั้ง 8 ระดับเสียง:</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 text-center font-mono">
+                        <span class="bg-slate-800 py-1 rounded">C (โด)</span>
+                        <span class="bg-slate-800 py-1 rounded">D (เร)</span>
+                        <span class="bg-slate-800 py-1 rounded">E (มี)</span>
+                        <span class="bg-slate-800 py-1 rounded">F (ฟา)</span>
+                        <span class="bg-slate-800 py-1 rounded">G (ซอล)</span>
+                        <span class="bg-slate-800 py-1 rounded">A (ลา)</span>
+                        <span class="bg-slate-800 py-1 rounded">B (ที)</span>
+                        <span class="bg-slate-800 py-1 rounded">C High</span>
+                    </div>
+                </div>
+
+                <button id="start-btn" class="px-8 py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all transform hover:scale-105 active:scale-95 text-lg">
+                    <i class="fa-solid fa-gamepad mr-2"></i> เริ่มเล่นเกม
+                </button>
+            </div>
+
+            <!-- Result Summary Screen -->
+            <div id="result-screen" class="absolute inset-0 bg-slate-950/95 z-40 flex flex-col items-center justify-center p-6 text-center hidden">
+                <div class="w-16 h-16 bg-emerald-500/20 rounded-full border border-emerald-500/40 flex items-center justify-center text-3xl text-emerald-400 mb-4">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-white mb-1">สรุปผลการเล่น</h2>
+                <p class="text-slate-400 text-sm mb-4">แบบทดสอบโน้ต คีย์ C Major ทั้งหมด 10 ข้อ</p>
+
+                <!-- Final Score Badge -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 px-8 mb-6 shadow-inner">
+                    <div class="text-xs text-slate-400 uppercase tracking-widest mb-1">คะแนนรวมที่ได้</div>
+                    <div class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200" id="final-score-display">
+                        0 / 10
+                    </div>
+                </div>
+
+                <!-- Detailed Breakdown Table -->
+                <div class="w-full max-w-md bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden mb-6 max-h-48 overflow-y-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-800/60 text-slate-400 uppercase sticky top-0">
+                            <tr>
+                                <th class="p-2.5 px-3">ข้อที่</th>
+                                <th class="p-2.5 px-3">โน้ตโจทย์</th>
+                                <th class="p-2.5 px-3">คำตอบของคุณ</th>
+                                <th class="p-2.5 px-3 text-center">ผลลัพธ์</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-table-body" class="divide-y divide-slate-800 text-slate-300">
+                            <!-- Dynamic Content Inserted Here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <button id="restart-btn" class="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> เล่นอีกครั้ง
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Piano Keyboard Area -->
+        <div class="h-44 bg-slate-950 p-3 pt-1 border-t border-slate-800 relative z-10 flex">
+            
+            <!-- Keys Container (C4 to C5) -->
+            <div class="w-full h-full flex space-x-1 relative" id="keyboard">
+                
+                <!-- C4 Key -->
+                <button data-key="C4" class="piano-key flex-1 bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 rounded-b-lg border-b-4 border-slate-400 flex flex-col justify-end items-center pb-2 text-slate-800 font-bold transition-all shadow-md active:bg-indigo-200">
+                    <span class="text-xs text-slate-500">โด</span>
+                    <span class="text-base">C4</span>
+                </button>
+
+                <!-- D4 Key -->
+                <button data-key="D4" class="piano-key flex-1 bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 rounded-b-lg border-b-4 border-slate-400 flex flex-col justify-end items-center pb-2 text-slate-800 font-bold transition-all shadow-md active:bg-indigo-200">
+                    <span class="text-xs text-slate-500">เร</span>
+                    <span class="text-base">D4</span>
+                </button>
+
+                <!-- E4 Key -->
+                <button data-key="E4" class="piano-key flex-1 bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 rounded-b-lg border-b-4 border-slate-400 flex flex-col justify-end items-center pb-2 text-slate-800 font-bold transition-all shadow-md active:bg-indigo-200">
+                    <span class="text-xs text-slate-500">มี</span>
+                    <span class="text-base">E4</span>
+                </button>
+
+                <!-- F4 Key -->
+                <button data-key="F4" class="piano-key flex-1 bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 rounded-b-lg border-b-4 border-slate-400 flex flex-col justify-end items-center pb-2 text-slate-800 font-bold transition-all shadow-md active:bg-indigo-200">
+                    <span class="text-xs text-slate-500">ฟา</span>
+                    <span class="text-base">F4</span>
+                </button>
+
+                <!-- G4 Key -->
+                <button data-key="G4" class="piano-key flex-1 bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 rounded-b-lg border-b-4 border-slate-400 flex flex-col justify-end items-center pb-2 text-slate-800 font-bold transition-all shadow-md active:bg-indigo-200">
+                    <span class="text-xs text-slate-500">ซอล</span>
+                    <span class="text-base">G4</span>
+                </button>
+
+                <!-- A4 Key -->
+                <button data-key="A4" class="piano-key flex-1 bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 rounded-b-lg border-b-4 border-slate-400 flex flex-col justify-end items-center pb-2 text-slate-800 font-bold transition-all shadow-md active:bg-indigo-200">
+                    <span class="text-xs text-slate-500">ลา</span>
+                    <span class="text-base">A4</span>
+                </button>
+
+                <!-- B4 Key -->
+                <button data-key="B4" class="piano-key flex-1 bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 rounded-b-lg border-b-4 border-slate-400 flex flex-col justify-end items-center pb-2 text-slate-800 font-bold transition-all shadow-md active:bg-indigo-200">
+                    <span class="text-xs text-slate-500">ที</span>
+                    <span class="text-base">B4</span>
+                </button>
+
+                <!-- C5 Key -->
+                <button data-key="C5" class="piano-key flex-1 bg-gradient-to-b from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 rounded-b-lg border-b-4 border-slate-400 flex flex-col justify-end items-center pb-2 text-slate-800 font-bold transition-all shadow-md active:bg-indigo-200">
+                    <span class="text-xs text-slate-500">โด (สูง)</span>
+                    <span class="text-base">C5</span>
+                </button>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Web Audio API Synthesizer Setup
+        let audioCtx = null;
+
+        // Frequencies for C Major Notes
+        const NOTE_FREQUENCIES = {
+            'C4': 261.63,
+            'D4': 293.66,
+            'E4': 329.63,
+            'F4': 349.23,
+            'G4': 392.00,
+            'A4': 440.00,
+            'B4': 493.88,
+            'C5': 523.25
+        };
+
+        const NOTE_NAMES_THAI = {
+            'C4': 'โด (C4)',
+            'D4': 'เร (D4)',
+            'E4': 'มี (E4)',
+            'F4': 'ฟา (F4)',
+            'G4': 'ซอล (G4)',
+            'A4': 'ลา (A4)',
+            'B4': 'ที (B4)',
+            'C5': 'โดสูง (C5)'
+        };
+
+        // Initialize Web Audio Context
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Play Synthesized Piano Note
+        function playNoteSound(noteName) {
+            if (!audioCtx) return;
+            const freq = NOTE_FREQUENCIES[noteName];
+            if (!freq) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'triangle'; // Warm piano-like wave
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+            // Envelope
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.2);
+        }
+
+        // Play Countdown Metronome Tick
+        function playBeatSound(isFinalBeat = false) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(isFinalBeat ? 880 : 440, audioCtx.currentTime); // Pitch difference
+
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        // 10 Distinct Questions Set for C Major
+        const QUESTIONS = [
+            { id: 1, note: 'C4', label: 'โด (C4)' },
+            { id: 2, note: 'E4', label: 'มี (E4)' },
+            { id: 3, note: 'G4', label: 'ซอล (G4)' },
+            { id: 4, note: 'D4', label: 'เร (D4)' },
+            { id: 5, note: 'F4', label: 'ฟา (F4)' },
+            { id: 6, note: 'A4', label: 'ลา (A4)' },
+            { id: 7, note: 'B4', label: 'ที (B4)' },
+            { id: 8, note: 'C5', label: 'โดสูง (C5)' },
+            { id: 9, note: 'E4', label: 'มี (E4)' },
+            { id: 10, note: 'G4', label: 'ซอล (G4)' }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let questionHistory = []; // Tracks detailed user answers
+        let fallingElement = null;
+        let animationFrameId = null;
+        let isQuestionActive = false;
+        let fallingSpeed = 2.2; // Falling speed in pixels per frame
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const countdownOverlay = document.getElementById('countdown-overlay');
+        const countdownNumber = document.getElementById('countdown-number');
+        const countdownLabel = document.getElementById('countdown-label');
+        const feedbackBanner = document.getElementById('feedback-banner');
+        const currentQuestionText = document.getElementById('current-question-text');
+        const currentScoreText = document.getElementById('current-score-text');
+        const trackContainer = document.getElementById('track-container');
+        const keyboard = document.getElementById('keyboard');
+
+        // Event Listeners
+        startBtn.addEventListener('click', () => {
+            initAudio();
+            startScreen.classList.add('hidden');
+            startNewGame();
+        });
+
+        restartBtn.addEventListener('click', () => {
+            initAudio();
+            resultScreen.classList.add('hidden');
+            startNewGame();
+        });
+
+        // Key Press Events
+        keyboard.addEventListener('click', (e) => {
+            const keyBtn = e.target.closest('.piano-key');
+            if (!keyBtn) return;
+
+            const selectedNote = keyBtn.getAttribute('data-key');
+            playNoteSound(selectedNote);
+
+            // Visual Key Press Effect
+            keyBtn.classList.add('key-active');
+            setTimeout(() => keyBtn.classList.remove('key-active'), 150);
+
+            // Handle Answer Interaction
+            if (isQuestionActive) {
+                handleUserAnswer(selectedNote);
+            }
+        });
+
+        function startNewGame() {
+            score = 0;
+            currentQuestionIndex = 0;
+            questionHistory = [];
+            updateHeaderUI();
+            startRoundCountdown();
+        }
+
+        function updateHeaderUI() {
+            currentQuestionText.textContent = `${currentQuestionIndex + 1} / ${QUESTIONS.length}`;
+            currentScoreText.textContent = score;
+        }
+
+        // 4-Beat Countdown Logic (1, 2, 3, 4) - Used only before the 1st question
+        function startRoundCountdown() {
+            isQuestionActive = false;
+            countdownOverlay.classList.remove('hidden');
+            let beatCount = 1;
+
+            countdownNumber.textContent = beatCount;
+            countdownNumber.className = "text-8xl font-black text-amber-400 animate-beat";
+            countdownLabel.textContent = `จังหวะที่ ${beatCount} / 4`;
+            playBeatSound(false);
+
+            const beatInterval = setInterval(() => {
+                beatCount++;
+                if (beatCount <= 4) {
+                    countdownNumber.textContent = beatCount;
+                    // Trigger re-animation
+                    countdownNumber.classList.remove('animate-beat');
+                    void countdownNumber.offsetWidth; // Force reflow
+                    countdownNumber.classList.add('animate-beat');
+
+                    if (beatCount === 4) {
+                        countdownNumber.className = "text-8xl font-black text-emerald-400 animate-beat";
+                        playBeatSound(true);
+                        countdownLabel.textContent = "ลุยเลย!";
+                    } else {
+                        playBeatSound(false);
+                        countdownLabel.textContent = `จังหวะที่ ${beatCount} / 4`;
+                    }
+                } else {
+                    clearInterval(beatInterval);
+                    countdownOverlay.classList.add('hidden');
+                    spawnFallingNote();
+                }
+            }, 750); // 750ms per beat = 80 BPM speed
+        }
+
+        function spawnFallingNote() {
+            // Clear existing note elements if any
+            if (fallingElement) fallingElement.remove();
+
+            const currentQ = QUESTIONS[currentQuestionIndex];
+            const lane = trackContainer.querySelector(`[data-note="${currentQ.note}"]`);
+
+            if (!lane) return;
+
+            // Create Visual Falling Note Element
+            fallingElement = document.createElement('div');
+            fallingElement.className = 'absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-indigo-500 border-2 border-white shadow-[0_0_15px_rgba(99,102,241,0.8)] flex flex-col items-center justify-center text-white font-bold text-xs z-10 transition-transform';
+            fallingElement.innerHTML = `
+                <i class="fa-solid fa-music text-sm mb-0.5"></i>
+                <span>${currentQ.note}</span>
+            `;
+
+            let currentY = -50;
+            fallingElement.style.top = `${currentY}px`;
+            lane.appendChild(fallingElement);
+
+            isQuestionActive = true;
+            const containerHeight = trackContainer.clientHeight;
+
+            // Animation Loop
+            function animateNote() {
+                if (!isQuestionActive) return;
+
+                currentY += fallingSpeed;
+                fallingElement.style.top = `${currentY}px`;
+
+                // Check if note touched the bottom line without answer (Miss)
+                if (currentY >= containerHeight - 45) {
+                    handleUserAnswer(null); // Timeout/Missed
+                    return;
+                }
+
+                animationFrameId = requestAnimationFrame(animateNote);
+            }
+
+            animationFrameId = requestAnimationFrame(animateNote);
+        }
+
+        function handleUserAnswer(userNote) {
+            if (!isQuestionActive) return;
+            isQuestionActive = false;
+            cancelAnimationFrame(animationFrameId);
+
+            const currentQ = QUESTIONS[currentQuestionIndex];
+            const isCorrect = (userNote === currentQ.note);
+
+            if (isCorrect) {
+                score++;
+                showFeedback(true, 'ถูกต้อง! +1 คะแนน');
+                if (fallingElement) {
+                    fallingElement.classList.add('bg-emerald-500', 'scale-125');
+                }
+            } else {
+                showFeedback(false, userNote ? `ผิด! โจทย์คือ ${currentQ.note}` : `หมดเวลา! โจทย์คือ ${currentQ.note}`);
+                if (fallingElement) {
+                    fallingElement.classList.add('bg-rose-500', 'opacity-50');
+                }
+            }
+
+            // Record History
+            questionHistory.push({
+                questionNum: currentQuestionIndex + 1,
+                targetNote: currentQ.note,
+                userAnswer: userNote ? userNote : 'ไม่ได้ตอบ',
+                isCorrect: isCorrect
+            });
+
+            updateHeaderUI();
+
+            // Transition to Next Question directly without counting 4 beats again
+            setTimeout(() => {
+                if (fallingElement) fallingElement.remove();
+
+                currentQuestionIndex++;
+                if (currentQuestionIndex < QUESTIONS.length) {
+                    updateHeaderUI();
+                    spawnFallingNote(); // Start next note immediately
+                } else {
+                    showFinalResult();
+                }
+            }, 800);
+        }
+
+        function showFeedback(isCorrect, message) {
+            feedbackBanner.textContent = message;
+            feedbackBanner.className = `absolute top-6 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full font-bold text-sm shadow-xl border transition-all duration-300 z-30 opacity-100 ${
+                isCorrect 
+                    ? 'bg-emerald-500/90 text-white border-emerald-400 shadow-emerald-500/30' 
+                    : 'bg-rose-500/90 text-white border-rose-400 shadow-rose-500/30'
+            }`;
+
+            setTimeout(() => {
+                feedbackBanner.classList.add('opacity-0');
+            }, 1000);
+        }
+
+        function showFinalResult() {
+            document.getElementById('final-score-display').textContent = `${score} / ${QUESTIONS.length}`;
+
+            const tbody = document.getElementById('summary-table-body');
+            tbody.innerHTML = '';
+
+            questionHistory.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40";
+                tr.innerHTML = `
+                    <td class="p-2.5 px-3 font-medium">ข้อ ${item.questionNum}</td>
+                    <td class="p-2.5 px-3 font-semibold text-indigo-300">${NOTE_NAMES_THAI[item.targetNote] || item.targetNote}</td>
+                    <td class="p-2.5 px-3">${item.userAnswer !== 'ไม่ได้ตอบ' ? (NOTE_NAMES_THAI[item.userAnswer] || item.userAnswer) : '<span class="text-slate-500">ไม่ได้ตอบ</span>'}</td>
+                    <td class="p-2.5 px-3 text-center">
+                        ${item.isCorrect 
+                            ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"><i class="fa-solid fa-check mr-1"></i> ถูกต้อง</span>' 
+                            : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30"><i class="fa-solid fa-xmark mr-1"></i> ผิด</span>'
+                        }
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            resultScreen.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

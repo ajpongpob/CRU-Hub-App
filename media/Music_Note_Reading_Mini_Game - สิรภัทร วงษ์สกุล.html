@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมฝึกอ่านโน้ตดนตรีบนบรรทัดห้าเส้น</title>
+    <!-- Tailwind CSS CDN (Optional fallback) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Kanit -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* CRITICAL PURE CSS: Enforce display toggling regardless of external CSS loading */
+        .hidden {
+            display: none !important;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Kanit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 768px;
+            margin: 0 auto;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+            border-radius: 24px;
+            padding: 24px;
+            width: 100%;
+        }
+
+        /* Responsive Layout Grid & Flex utilities fallback */
+        .flex-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        /* Standalone Button & Interactive Styles */
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: #ffffff;
+            border: none;
+            border-radius: 16px;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            opacity: 0.95;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.45);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-option {
+            transition: all 0.2s ease;
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+
+        .btn-option:hover:not(:disabled) {
+            border-color: #818cf8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Music Staff Styling */
+        .staff-line {
+            stroke: #1e293b;
+            stroke-width: 2;
+        }
+
+        .note-head {
+            fill: #0f172a;
+            transition: all 0.3s ease;
+        }
+
+        /* Custom Scrollbar for review section */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(241, 245, 249, 0.5);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #818cf8;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
+            }
+            .glass-card {
+                padding: 16px;
+                border-radius: 20px;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        
+        <!-- App Container Card -->
+        <div class="glass-card">
+            
+            <!-- Header Bar -->
+            <header class="flex-between pb-4 mb-4 border-b border-slate-200" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+                <div class="flex items-center space-x-3" style="display: flex; align-items: center; gap: 12px;">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex-center shadow-lg" style="width: 40px; height: 40px; background-color: #4f46e5; color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                        🎼
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold" style="font-size: 1.25rem; font-weight: 700; color: #312e81;">
+                            Note Reader Quest
+                        </h1>
+                        <p class="text-xs text-slate-500 font-medium" style="font-size: 0.75rem; color: #64748b;">เกมฝึกอ่านโน้ตบรรทัดห้าเส้น</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button id="soundToggleBtn" onclick="toggleMute()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex-center transition" style="width: 40px; height: 40px; border-radius: 12px; background: #f1f5f9; border: none; font-size: 18px;" title="เปิด/ปิด เสียง">
+                        <span id="soundIcon">🔊</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- VIEW 1: START SCREEN -->
+            <div id="startScreen" class="py-4 text-center" style="text-align: center; padding: 16px 0;">
+                <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-indigo-50 text-indigo-600 flex-center text-3xl shadow-inner" style="width: 80px; height: 80px; margin: 0 auto 20px auto; border-radius: 50%; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 36px;">
+                    🎓
+                </div>
+                
+                <h2 class="text-2xl font-bold text-slate-800 mb-3" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; color: #1e293b;">
+                    พร้อมทดสอบความรู้การอ่านโน้ตหรือยัง?
+                </h2>
+                <p class="text-slate-600 text-sm mb-6 leading-relaxed" style="font-size: 0.95rem; color: #475569; max-width: 500px; margin: 0 auto 24px auto; line-height: 1.6;">
+                    ตอบคำถามระบุชื่อโน้ตจากบรรทัดห้าเส้นทั้งหมด <strong style="color: #4f46e5;">10 ข้อ</strong> ไม่จำกัดเวลา ตอบเสร็จมีเฉลยละเอียดและเสียงโน้ตให้ทบทวนทุกข้อ!
+                </p>
+
+                <!-- Clef Selection -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-8" style="background: #f8fafc; padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; max-width: 480px; margin: 0 auto 28px auto; text-align: left;">
+                    <label class="block text-sm font-semibold text-slate-700 mb-3" style="display: block; font-size: 0.875rem; font-weight: 600; color: #334155; margin-bottom: 12px;">
+                        ⚙️ เลือกว่าต้องการฝึกกุญแจดนตรีแบบไหน:
+                    </label>
+                    <div class="grid-3">
+                        <button onclick="selectClefMode('treble')" id="clefBtnTreble" class="clef-select-btn" style="padding: 10px 4px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; border: 2px solid #4f46e5; background: #4f46e5; color: white;">
+                            กุญแจซอล 🎼
+                        </button>
+                        <button onclick="selectClefMode('bass')" id="clefBtnBass" class="clef-select-btn" style="padding: 10px 4px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; border: 2px solid #cbd5e1; background: white; color: #475569;">
+                            กุญแจฟา 𝄢
+                        </button>
+                        <button onclick="selectClefMode('both')" id="clefBtnBoth" class="clef-select-btn" style="padding: 10px 4px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; border: 2px solid #cbd5e1; background: white; color: #475569;">
+                            ผสมทั้งสอง 🔀
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="startGame()" class="btn-primary text-lg">
+                    <span>▶️ เริ่มเล่นเกม</span>
+                </button>
+            </div>
+
+            <!-- VIEW 2: QUIZ SCREEN (Hidden initially) -->
+            <div id="quizScreen" class="hidden">
+                <!-- Status & Progress -->
+                <div class="flex-between mb-4" style="margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full" style="font-size: 0.75rem; font-weight: 700; color: #4f46e5; background: #eef2ff; padding: 4px 12px; border-radius: 999px;">
+                            ข้อที่ <span id="currentQuestionNum">1</span> / 10
+                        </span>
+                        <span id="clefBadge" style="font-size: 0.75rem; font-weight: 500; color: #475569; background: #f1f5f9; padding: 4px 10px; border-radius: 999px;">
+                            กุญแจซอล
+                        </span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 1.1rem;">⭐</span>
+                        <span class="font-bold text-slate-700 text-sm" style="font-weight: 700; font-size: 0.9rem; color: #334155;">คะแนน: <span id="currentScore" style="color: #4f46e5; font-size: 1.1rem;">0</span></span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar Container -->
+                <div style="width: 100%; background: #f1f5f9; height: 10px; border-radius: 999px; margin-bottom: 24px; overflow: hidden;">
+                    <div id="progressBar" style="background: linear-gradient(90deg, #6366f1, #a855f7); height: 100%; width: 10%; transition: width 0.3s ease;"></div>
+                </div>
+
+                <!-- Music Staff SVG Container -->
+                <div style="background: #fffbeb; border-radius: 16px; padding: 16px; border: 1px solid #fef3c7; margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px;">
+                    
+                    <!-- SVG Interactive Staff -->
+                    <div style="width: 100%; max-width: 360px; height: 180px; display: flex; align-items: center; justify-content: center;">
+                        <svg id="staffSvg" viewBox="0 0 320 180" style="width: 100%; height: 100%; overflow: visible;">
+                            <!-- Rendered dynamically by JavaScript -->
+                        </svg>
+                    </div>
+
+                    <!-- Audio Playback Button -->
+                    <button onclick="playCurrentNoteSound()" style="margin-top: 8px; font-size: 0.8rem; font-weight: 600; color: #4338ca; background: #e0e7ff; border: 1px solid #c7d2fe; padding: 6px 16px; border-radius: 999px; display: flex; align-items: center; gap: 6px;">
+                        <span>🔊 กดฟังเสียงโน้ตข้อนี้</span>
+                    </button>
+                </div>
+
+                <!-- Multiple Choices Grid -->
+                <div id="optionsContainer" class="grid-2 mb-6" style="margin-bottom: 24px;">
+                    <!-- 4 Choice buttons generated via JS -->
+                </div>
+
+                <!-- Feedback & Explanation Banner -->
+                <div id="feedbackBanner" class="hidden" style="padding: 16px; border-radius: 16px; margin-bottom: 24px; transition: all 0.3s ease;">
+                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <div id="feedbackIcon" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; flex-shrink: 0;">
+                            ✓
+                        </div>
+                        <div style="flex: 1;">
+                            <h4 id="feedbackTitle" style="font-weight: 700; font-size: 1rem; margin-bottom: 4px;"></h4>
+                            <p id="feedbackText" style="font-size: 0.875rem; line-height: 1.5; opacity: 0.95;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next Question Button -->
+                <div style="text-align: right;">
+                    <button id="nextBtn" onclick="nextQuestion()" disabled class="btn-primary">
+                        <span>ข้อถัดไป ➔</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 3: SUMMARY & EXPLANATION REVIEW SCREEN (Hidden initially) -->
+            <div id="summaryScreen" class="hidden" style="padding: 16px 0;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <div style="display: inline-block; padding: 16px; border-radius: 50%; background: #eef2ff; border: 1px solid #e0e7ff; margin-bottom: 12px;">
+                        <span id="scoreStars" style="font-size: 40px;">🏆</span>
+                    </div>
+                    <h2 style="font-size: 1.75rem; font-weight: 700; color: #1e293b; margin-bottom: 4px;">สรุปผลคะแนนการเล่น</h2>
+                    <p style="color: #64748b; font-size: 0.875rem;">คุณทำแบบทดสอบอ่านโน้ตครบทั้ง 10 ข้อแล้ว</p>
+                    
+                    <div style="margin-top: 16px; display: inline-block; background: #4f46e5; color: white; padding: 12px 28px; border-radius: 16px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; tracking-wider: 1px; opacity: 0.8; display: block;">คะแนนที่ได้</span>
+                        <span style="font-size: 2rem; font-weight: 800;" id="finalScoreDisplay">0 / 10</span>
+                    </div>
+                    <p id="gradeComment" style="margin-top: 12px; font-weight: 600; font-size: 1.1rem; color: #4338ca;"></p>
+                </div>
+
+                <!-- Detailed Answer Key Section -->
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <span>📋 เฉลยและคำอธิบายโดยละเอียดทั้ง 10 ข้อ</span>
+                    </h3>
+
+                    <!-- Review list overflow container -->
+                    <div id="reviewList" style="display: flex; flex-direction: column; gap: 12px; max-height: 380px; overflow-y: auto; padding-right: 4px;">
+                        <!-- Dynamic Question Review Cards will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center;">
+                    <button onclick="startGame()" class="btn-primary">
+                        <span>🔄 เล่นอีกครั้ง</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- NOTE DATA DEFINITIONS ---
+        const NOTE_NAMES = {
+            'C': 'โด (C)',
+            'D': 'เร (D)',
+            'E': 'มี (E)',
+            'F': 'ฟา (F)',
+            'G': 'ซอล (G)',
+            'A': 'ลา (A)',
+            'B': 'ที (B)'
+        };
+
+        // Treble Clef Note Database (Line offset 0 = Bottom line E4)
+        const TREBLE_NOTES = [
+            { pitch: 'C4', letter: 'C', octave: 4, offset: -2, nameTh: 'โด (C)', freq: 261.63, explain: 'โน้ต โด (C4) อยู่บนเส้นช่วย (Ledger Line) ใต้บรรทัดห้าเส้น' },
+            { pitch: 'D4', letter: 'D', octave: 4, offset: -1, nameTh: 'เร (D)', freq: 293.66, explain: 'โน้ต เร (D4) แขวนอยู่ใต้เส้นที่ 1 ของบรรทัดห้าเส้น' },
+            { pitch: 'E4', letter: 'E', octave: 4, offset: 0,  nameTh: 'มี (E)', freq: 329.63, explain: 'โน้ต มี (E4) ทับอยู่บนเส้นที่ 1 (เส้นล่างสุด)' },
+            { pitch: 'F4', letter: 'F', octave: 4, offset: 1,  nameTh: 'ฟา (F)', freq: 349.23, explain: 'โน้ต ฟา (F4) อยู่ในช่องที่ 1 (ระหว่างเส้นที่ 1 และ 2)' },
+            { pitch: 'G4', letter: 'G', octave: 4, offset: 2,  nameTh: 'ซอล (G)', freq: 392.00, explain: 'โน้ต ซอล (G4) ทับอยู่บนเส้นที่ 2 (เส้นศูนย์กลางของกุญแจซอล)' },
+            { pitch: 'A4', letter: 'A', octave: 4, offset: 3,  nameTh: 'ลา (A)', freq: 440.00, explain: 'โน้ต ลา (A4) อยู่ในช่องที่ 2' },
+            { pitch: 'B4', letter: 'B', octave: 4, offset: 4,  nameTh: 'ที (B)', freq: 493.88, explain: 'โน้ต ที (B4) ทับอยู่บนเส้นที่ 3 (เส้นกลาง)' },
+            { pitch: 'C5', letter: 'C', octave: 5, offset: 5,  nameTh: 'โด (C)', freq: 523.25, explain: 'โน้ต โดสูง (C5) อยู่ในช่องที่ 3' },
+            { pitch: 'D5', letter: 'D', octave: 5, offset: 6,  nameTh: 'เร (D)', freq: 587.33, explain: 'โน้ต เรสูง (D5) ทับอยู่บนเส้นที่ 4' },
+            { pitch: 'E5', letter: 'E', octave: 5, offset: 7,  nameTh: 'มี (E)', freq: 659.25, explain: 'โน้ต มีสูง (E5) อยู่ในช่องที่ 4 (ช่องบนสุด)' },
+            { pitch: 'F5', letter: 'F', octave: 5, offset: 8,  nameTh: 'ฟา (F)', freq: 698.46, explain: 'โน้ต ฟาสูง (F5) ทับอยู่บนเส้นที่ 5 (เส้นบนสุด)' },
+            { pitch: 'G5', letter: 'G', octave: 5, offset: 9,  nameTh: 'ซอล (G)', freq: 783.99, explain: 'โน้ต ซอลสูง (G5) อยู่เหนือเส้นที่ 5' },
+            { pitch: 'A5', letter: 'A', octave: 5, offset: 10, nameTh: 'ลา (A)', freq: 880.00, explain: 'โน้ต ลาสูง (A5) อยู่บนเส้นช่วยเหนือบรรทัดห้าเส้น' }
+        ];
+
+        // Bass Clef Note Database (Line offset 0 = Bottom line G2)
+        const BASS_NOTES = [
+            { pitch: 'E2', letter: 'E', octave: 2, offset: -2, nameTh: 'มี (E)', freq: 82.41,  explain: 'โน้ต มี (E2) อยู่บนเส้นช่วยใต้บรรทัดห้าเส้นของกุญแจฟา' },
+            { pitch: 'F2', letter: 'F', octave: 2, offset: -1, nameTh: 'ฟา (F)', freq: 87.31,  explain: 'โน้ต ฟา (F2) อยู่ใต้เส้นที่ 1 ของกุญแจฟา' },
+            { pitch: 'G2', letter: 'G', octave: 2, offset: 0,  nameTh: 'ซอล (G)', freq: 98.00,  explain: 'โน้ต ซอล (G2) ทับอยู่บนเส้นที่ 1 (เส้นล่างสุด)' },
+            { pitch: 'A2', letter: 'A', octave: 2, offset: 1,  nameTh: 'ลา (A)', freq: 110.00, explain: 'โน้ต ลา (A2) อยู่ในช่องที่ 1' },
+            { pitch: 'B2', letter: 'B', octave: 2, offset: 2,  nameTh: 'ที (B)', freq: 123.47, explain: 'โน้ต ที (B2) ทับอยู่บนเส้นที่ 2' },
+            { pitch: 'C3', letter: 'C', octave: 3, offset: 3,  nameTh: 'โด (C)', freq: 130.81, explain: 'โน้ต โด (C3) อยู่ในช่องที่ 2' },
+            { pitch: 'D3', letter: 'D', octave: 3, offset: 4,  nameTh: 'เร (D)', freq: 146.83, explain: 'โน้ต เร (D3) ทับอยู่บนเส้นที่ 3 (เส้นกลาง)' },
+            { pitch: 'E3', letter: 'E', octave: 3, offset: 5,  nameTh: 'มี (E)', freq: 164.81, explain: 'โน้ต มี (E3) อยู่ในช่องที่ 3' },
+            { pitch: 'F3', letter: 'F', octave: 3, offset: 6,  nameTh: 'ฟา (F)', freq: 174.61, explain: 'โน้ต ฟา (F3) ทับอยู่บนเส้นที่ 4 (เส้นจุดกุญแจฟา)' },
+            { pitch: 'G3', letter: 'G', octave: 3, offset: 7,  nameTh: 'ซอล (G)', freq: 196.00, explain: 'โน้ต ซอล (G3) อยู่ในช่องที่ 4 (ช่องบนสุด)' },
+            { pitch: 'A3', letter: 'A', octave: 3, offset: 8,  nameTh: 'ลา (A)', freq: 220.00, explain: 'โน้ต ลา (A3) ทับอยู่บนเส้นที่ 5 (เส้นบนสุด)' },
+            { pitch: 'B3', letter: 'B', octave: 3, offset: 9,  nameTh: 'ที (B)', freq: 246.94, explain: 'โน้ต ที (B3) อยู่เหนือเส้นที่ 5' },
+            { pitch: 'C4', letter: 'C', octave: 4, offset: 10, nameTh: 'โด (C)', freq: 261.63, explain: 'โน้ต โดกลาง (Middle C / C4) อยู่บนเส้นช่วยเหนือบรรทัดห้าเส้น' }
+        ];
+
+        // Game State Variables
+        let selectedClefMode = 'treble';
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isAnswered = false;
+        let userAnswersHistory = [];
+        let isMuted = false;
+
+        // Web Audio Context initialization
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Play musical note using Web Audio API
+        function playNote(frequency, duration = 0.8) {
+            if (isMuted) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {
+                console.log("Audio play error:", e);
+            }
+        }
+
+        function playSoundFx(type) {
+            if (isMuted) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                if (type === 'correct') {
+                    playNote(523.25, 0.2);
+                    setTimeout(() => playNote(783.99, 0.4), 120);
+                } else if (type === 'wrong') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                }
+            } catch(e) {}
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const icon = document.getElementById('soundIcon');
+            if (isMuted) {
+                icon.innerText = '🔇';
+            } else {
+                icon.innerText = '🔊';
+            }
+        }
+
+        function selectClefMode(mode) {
+            selectedClefMode = mode;
+            document.querySelectorAll('.clef-select-btn').forEach(btn => {
+                btn.style.border = '2px solid #cbd5e1';
+                btn.style.background = 'white';
+                btn.style.color = '#475569';
+            });
+            
+            let activeBtnId = 'clefBtnTreble';
+            if (mode === 'bass') activeBtnId = 'clefBtnBass';
+            if (mode === 'both') activeBtnId = 'clefBtnBoth';
+
+            const activeBtn = document.getElementById(activeBtnId);
+            if (activeBtn) {
+                activeBtn.style.border = '2px solid #4f46e5';
+                activeBtn.style.background = '#4f46e5';
+                activeBtn.style.color = 'white';
+            }
+        }
+
+        /* Render Music Staff & Note onto SVG */
+        function renderStaffSvg(clef, offset, targetSvgId = 'staffSvg') {
+            const svg = document.getElementById(targetSvgId);
+            if (!svg) return;
+
+            const staffTopY = 50;
+            const lineSpacing = 16;
+            const staffWidth = 280;
+            const startX = 20;
+            const endX = startX + staffWidth;
+            
+            const line1Y = staffTopY + (4 * lineSpacing); 
+            const noteY = line1Y - (offset * (lineSpacing / 2));
+            const noteX = 180;
+
+            let svgContent = '';
+
+            // 1. Draw 5 Staff Lines
+            for (let i = 0; i < 5; i++) {
+                const y = staffTopY + (i * lineSpacing);
+                svgContent += `<line x1="${startX}" y1="${y}" x2="${endX}" y2="${y}" class="staff-line" />`;
+            }
+
+            // End Barlines
+            svgContent += `<line x1="${startX}" y1="${staffTopY}" x2="${startX}" y2="${line1Y}" stroke="#1e293b" stroke-width="3" />`;
+            svgContent += `<line x1="${endX}" y1="${staffTopY}" x2="${endX}" y2="${line1Y}" stroke="#1e293b" stroke-width="3" />`;
+
+            // 2. Render Clef
+            if (clef === 'treble') {
+                svgContent += `
+                    <g class="treble-clef">
+                        <path d="M 37,97
+                                 C 34,97 33,100 33,102
+                                 C 33,106 38,108 43,104
+                                 C 48,100 48,90 40,86
+                                 C 28,86 24,98 24,107
+                                 C 24,118 36,122 45,112
+                                 C 51,104 51,88 44,65
+                                 L 42,50
+                                 C 39,36 38,24 42,18
+                                 C 46,12 51,16 49,25
+                                 C 46,38 41,75 39,122
+                                 C 38,133 34,142 27,142
+                                 C 22,142 19,137 21,132" 
+                              fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="21" cy="132" r="3" fill="#1e293b" />
+                    </g>
+                `;
+            } else {
+                svgContent += `
+                    <g class="bass-clef" fill="#1e293b">
+                        <circle cx="36" cy="66" r="5.5" />
+                        <path d="M 36,66 
+                                 C 36,49 56,46 62,58 
+                                 C 66,66 62,78 52,94 
+                                 C 46,104 38,112 33,116 
+                                 C 32,116.8 31.2,116 32,115 
+                                 C 38,108 47,97 53,87 
+                                 C 59,77 60,67 56,60 
+                                 C 52,52 41,52 38,62 
+                                 Z" />
+                        <circle cx="70" cy="58" r="3.2" />
+                        <circle cx="70" cy="74" r="3.2" />
+                    </g>
+                `;
+            }
+
+            // 3. Ledger Lines
+            if (offset < 0) {
+                for (let o = -2; o <= offset; o += 2) {
+                    const ly = line1Y - (o * (lineSpacing / 2));
+                    svgContent += `<line x1="${noteX - 16}" y1="${ly}" x2="${noteX + 16}" y2="${ly}" stroke="#1e293b" stroke-width="2" />`;
+                }
+            } else if (offset > 8) {
+                for (let o = 10; o <= offset; o += 2) {
+                    const ly = line1Y - (o * (lineSpacing / 2));
+                    svgContent += `<line x1="${noteX - 16}" y1="${ly}" x2="${noteX + 16}" y2="${ly}" stroke="#1e293b" stroke-width="2" />`;
+                }
+            }
+
+            // 4. Note Head
+            const noteRadiusX = 9;
+            const noteRadiusY = 6.5;
+            svgContent += `
+                <g transform="translate(${noteX}, ${noteY}) rotate(-25)">
+                    <ellipse cx="0" cy="0" rx="${noteRadiusX}" ry="${noteRadiusY}" class="note-head" />
+                </g>
+            `;
+
+            // 5. Stem
+            const stemUp = offset < 4;
+            const stemLength = 38;
+            if (stemUp) {
+                const stemX = noteX + 7.5;
+                svgContent += `<line x1="${stemX}" y1="${noteY - 2}" x2="${stemX}" y2="${noteY - stemLength}" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" />`;
+            } else {
+                const stemX = noteX - 7.5;
+                svgContent += `<line x1="${stemX}" y1="${noteY + 2}" x2="${stemX}" y2="${noteY + stemLength}" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" />`;
+            }
+
+            svg.innerHTML = svgContent;
+        }
+
+        function generateQuestions() {
+            const questions = [];
+            
+            for (let i = 0; i < 10; i++) {
+                let currentClef = selectedClefMode;
+                if (selectedClefMode === 'both') {
+                    currentClef = (Math.random() < 0.5) ? 'treble' : 'bass';
+                }
+
+                const pool = (currentClef === 'treble') ? TREBLE_NOTES : BASS_NOTES;
+                const targetNote = pool[Math.floor(Math.random() * pool.length)];
+
+                const wrongChoices = [];
+                const allLetters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+                const usedLetters = new Set([targetNote.letter]);
+
+                while (wrongChoices.length < 3) {
+                    const randomLetter = allLetters[Math.floor(Math.random() * allLetters.length)];
+                    if (!usedLetters.has(randomLetter)) {
+                        usedLetters.add(randomLetter);
+                        wrongChoices.push(NOTE_NAMES[randomLetter]);
+                    }
+                }
+
+                const options = [targetNote.nameTh, ...wrongChoices].sort(() => Math.random() - 0.5);
+
+                questions.push({
+                    clef: currentClef,
+                    note: targetNote,
+                    options: options,
+                    correctAnswer: targetNote.nameTh
+                });
+            }
+
+            return questions;
+        }
+
+        function startGame() {
+            getAudioContext();
+            
+            score = 0;
+            currentQuestionIndex = 0;
+            userAnswersHistory = [];
+            currentQuestions = generateQuestions();
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('summaryScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isAnswered = false;
+            const q = currentQuestions[currentQuestionIndex];
+
+            document.getElementById('currentQuestionNum').innerText = currentQuestionIndex + 1;
+            document.getElementById('currentScore').innerText = score;
+            document.getElementById('progressBar').style.width = `${((currentQuestionIndex + 1) / 10) * 100}%`;
+            
+            const clefBadge = document.getElementById('clefBadge');
+            if (q.clef === 'treble') {
+                clefBadge.innerText = 'กุญแจซอล 🎼';
+                clefBadge.style.background = '#eef2ff';
+                clefBadge.style.color = '#4338ca';
+            } else {
+                clefBadge.innerText = 'กุญแจฟา 𝄢';
+                clefBadge.style.background = '#f3e8ff';
+                clefBadge.style.color = '#6b21a8';
+            }
+
+            const feedbackBanner = document.getElementById('feedbackBanner');
+            feedbackBanner.classList.add('hidden');
+            
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.disabled = true;
+
+            renderStaffSvg(q.clef, q.note.offset, 'staffSvg');
+
+            setTimeout(() => {
+                playNote(q.note.freq);
+            }, 250);
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((optText) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-option';
+                
+                btn.innerHTML = `
+                    <span>${optText}</span>
+                    <span class="opt-icon" style="opacity: 0; font-size: 1.1rem;"></span>
+                `;
+
+                btn.onclick = () => handleAnswer(btn, optText);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function playCurrentNoteSound() {
+            const q = currentQuestions[currentQuestionIndex];
+            if (q && q.note) {
+                playNote(q.note.freq, 0.9);
+            }
+        }
+
+        function handleAnswer(selectedBtn, selectedText) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const q = currentQuestions[currentQuestionIndex];
+            const isCorrect = (selectedText === q.correctAnswer);
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('currentScore').innerText = score;
+            }
+
+            userAnswersHistory.push({
+                questionNum: currentQuestionIndex + 1,
+                clef: q.clef,
+                note: q.note,
+                userAnswer: selectedText,
+                correctAnswer: q.correctAnswer,
+                isCorrect: isCorrect
+            });
+
+            const allBtns = document.querySelectorAll('#optionsContainer button');
+            allBtns.forEach(btn => {
+                btn.disabled = true;
+                const btnText = btn.querySelector('span').innerText;
+                const icon = btn.querySelector('.opt-icon');
+
+                if (btnText === q.correctAnswer) {
+                    btn.style.borderColor = '#10b981';
+                    btn.style.background = '#ecfdf5';
+                    btn.style.color = '#065f46';
+                    btn.style.fontWeight = 'bold';
+                    icon.innerText = '✅';
+                    icon.style.opacity = '1';
+                } else if (btn === selectedBtn && !isCorrect) {
+                    btn.style.borderColor = '#f43f5e';
+                    btn.style.background = '#fff1f2';
+                    btn.style.color = '#9f1239';
+                    btn.style.fontWeight = 'bold';
+                    icon.innerText = '❌';
+                    icon.style.opacity = '1';
+                } else {
+                    btn.style.opacity = '0.5';
+                }
+            });
+
+            playSoundFx(isCorrect ? 'correct' : 'wrong');
+
+            const feedbackBanner = document.getElementById('feedbackBanner');
+            const feedbackIcon = document.getElementById('feedbackIcon');
+            const feedbackTitle = document.getElementById('feedbackTitle');
+            const feedbackText = document.getElementById('feedbackText');
+
+            feedbackBanner.classList.remove('hidden');
+
+            if (isCorrect) {
+                feedbackBanner.style.background = '#ecfdf5';
+                feedbackBanner.style.border = '1px solid #a7f3d0';
+                feedbackBanner.style.color = '#064e3b';
+                feedbackIcon.style.background = '#10b981';
+                feedbackIcon.innerText = '✓';
+                feedbackTitle.innerText = 'ถูกต้องครับ! 🎉';
+            } else {
+                feedbackBanner.style.background = '#fff1f2';
+                feedbackBanner.style.border = '1px solid #fecdd3';
+                feedbackBanner.style.color = '#881337';
+                feedbackIcon.style.background = '#f43f5e';
+                feedbackIcon.innerText = '✕';
+                feedbackTitle.innerText = `ตอบผิด! คำตอบที่ถูกต้องคือ ${q.correctAnswer}`;
+            }
+
+            feedbackText.innerText = q.note.explain;
+
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.disabled = false;
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < 9) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showSummary();
+            }
+        }
+
+        function showSummary() {
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('summaryScreen').classList.remove('hidden');
+
+            document.getElementById('finalScoreDisplay').innerText = `${score} / 10`;
+
+            const starsElem = document.getElementById('scoreStars');
+            const commentElem = document.getElementById('gradeComment');
+
+            if (score === 10) {
+                starsElem.innerText = '🏆🌟🌟🌟';
+                commentElem.innerText = 'ระดับมาสเตอร์! คุณอ่านโน้ตดนตรีได้แม่นยำสมบูรณ์แบบ!';
+                commentElem.style.color = '#059669';
+            } else if (score >= 8) {
+                starsElem.innerText = '🥇✨';
+                commentElem.innerText = 'ยอดเยี่ยมมาก! ทักษะการอ่านโน้ตของคุณอยู่ในเกณฑ์ดีมาก!';
+                commentElem.style.color = '#4f46e5';
+            } else if (score >= 5) {
+                starsElem.innerText = '🥈👍';
+                commentElem.innerText = 'ผ่านเกณฑ์! ฝึกฝนทบทวนเพิ่มเติมอีกนิด จะเก่งขึ้นแน่นอน!';
+                commentElem.style.color = '#d97706';
+            } else {
+                starsElem.innerText = '📚🎯';
+                commentElem.innerText = 'ไม่ต้องท้อแท้! ลองศึกษารายการเฉลยด้านล่างแล้วกดเล่นอีกรอบนะ';
+                commentElem.style.color = '#e11d48';
+            }
+
+            const reviewListContainer = document.getElementById('reviewList');
+            reviewListContainer.innerHTML = '';
+
+            userAnswersHistory.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.style.padding = '12px 16px';
+                card.style.borderRadius = '16px';
+                card.style.border = '1px solid ' + (item.isCorrect ? '#a7f3d0' : '#fecdd3');
+                card.style.background = item.isCorrect ? 'rgba(236, 253, 245, 0.7)' : 'rgba(255, 241, 242, 0.7)';
+
+                const miniSvgId = `reviewStaffSvg_${idx}`;
+
+                card.innerHTML = `
+                    <div style="display: flex; flex-wrap: wrap; items-center; justify-content: space-between; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 120px; height: 70px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; padding: 4px; flex-shrink: 0;">
+                                <svg id="${miniSvgId}" viewBox="0 0 320 180" style="width: 100%; height: 100%; overflow: visible;"></svg>
+                            </div>
+                            
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-weight: 700; color: #1e293b; font-size: 0.875rem;">ข้อที่ ${item.questionNum}</span>
+                                    <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 6px; ${item.clef === 'treble' ? 'background: #e0e7ff; color: #3730a3;' : 'background: #f3e8ff; color: #6b21a8;'}">
+                                        ${item.clef === 'treble' ? 'กุญแจซอล' : 'กุญแจฟา'}
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #475569; margin-top: 4px;">
+                                    <div>ตอบ: <strong style="color: ${item.isCorrect ? '#047857' : '#e11d48'};">${item.userAnswer}</strong></div>
+                                    ${!item.isCorrect ? `<div>เฉลย: <strong style="color: #047857;">${item.correctAnswer}</strong></div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button onclick="playNote(${item.note.freq})" style="padding: 6px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.75rem; font-weight: 600; color: #334155;">
+                                🔊 ฟังเสียง
+                            </button>
+
+                            <span style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; ${item.isCorrect ? 'background: #d1fae5; color: #065f46;' : 'background: #ffe4e6; color: #9f1239;'}">
+                                ${item.isCorrect ? '✅ ถูก' : '❌ ผิด'}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(226, 232, 240, 0.8); font-size: 0.75rem; color: #475569; line-height: 1.4;">
+                        💡 ${item.note.explain}
+                    </div>
+                `;
+
+                reviewListContainer.appendChild(card);
+
+                setTimeout(() => {
+                    renderStaffSvg(item.clef, item.note.offset, miniSvgId);
+                }, 50);
+            });
+        }
+    </script>
+</body>
+</html>

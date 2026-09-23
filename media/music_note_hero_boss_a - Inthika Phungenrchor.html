@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Note Hero: Boss A</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Sarabun for Thai support -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+            animation: float 2s ease-in-out infinite;
+        }
+        @keyframes pulse-fast {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .animate-pulse-fast {
+            animation: pulse-fast 0.5s ease-in-out infinite;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <style>
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes mouthOpen {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.25) translateY(2px); }
+        }
+        .animate-mouth {
+            animation: mouthOpen 1s ease-in-out infinite;
+        }
+    </style>
+
+    <div id="game-main-card" class="max-w-xl w-full bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-6 border border-white/20 transition-all relative">
+        
+        <div id="start-screen-container" class="text-center space-y-6 py-8">
+            <div class="text-8xl animate-float">🐲🎵</div>
+            <h1 class="text-4xl font-black text-yellow-400 tracking-wider">Music Note Hero: Boss A</h1>
+            <p class="text-purple-200 text-sm max-w-md mx-auto">ผจญภัยในโลกดนตรีสากลและโน๊ตไทย ฝึกฝนความจำและปราบมังกรบอส A ให้ราบคาบ!</p>
+            
+            <div class="flex flex-col gap-3 max-w-xs mx-auto pt-4">
+                <button onclick="startGame()" class="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold py-3.5 px-6 rounded-xl text-lg shadow-lg transform active:scale-95 transition-all cursor-pointer border border-emerald-400/40">
+                    🎮 เริ่มเกม (Start Game)
+                </button>
+                <button onclick="openHowToPlay()" class="bg-purple-800/80 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-md shadow-md border border-purple-400/30 transition-all cursor-pointer">
+                    📖 วิธีการเล่น (How to Play)
+                </button>
+                <button onclick="toggleBackgroundMusic()" id="start-bgm-toggle-btn" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl text-md shadow-md border border-slate-600 transition-all cursor-pointer flex items-center justify-center gap-2">
+                    <span>🔊 เปิด/ปิดเสียงดนตรี</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="how-to-play-modal" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-md z-20 rounded-2xl p-6 flex flex-col justify-between">
+            <div class="space-y-4">
+                <div class="flex justify-between items-center border-b border-white/10 pb-3">
+                    <h2 class="text-2xl font-bold text-yellow-300">📖 วิธีการเล่นเกม</h2>
+                    <button onclick="closeHowToPlay()" class="text-gray-400 hover:text-white text-xl font-bold px-2 py-1 cursor-pointer">✕</button>
+                </div>
+                <div class="space-y-3 text-sm text-gray-200 max-h-80 overflow-y-auto pr-2">
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <p class="font-bold text-yellow-400 mb-1">🎵 ด่านที่ 1: ทายโน๊ตไทยจากโน๊ตสากล</p>
+                        <ul class="list-disc list-inside space-y-1 text-gray-300">
+                            <li>ดูตัวโน๊ตสากล (C, D, E, F, G) ที่ปรากฏ</li>
+                            <li>เลือกโน๊ตไทยเดี่ยวๆ (ด, ร, ม, ฟ, ซ) ให้ถูกต้องจาก 4 ตัวเลือก</li>
+                            <li>มีหัวใจ 3 ดวง ❤️ ตอบผิดจะเสีย 1 ดวง พร้อมหน้าจอสั่น</li>
+                            <li>ตอบถูกสะสมครบ 6 ครั้ง จะผ่านไปสู้กับบอส A</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <p class="font-bold text-red-400 mb-1">🐲 ด่านที่ 2: บอส A แบทเทิล</p>
+                        <ul class="list-disc list-inside space-y-1 text-gray-300">
+                            <li>บอสมีเลือด 100 HP และจะอ้าปากแสดงโน๊ตไทยขึ้นมาท้าทาย</li>
+                            <li>เลือกโน๊ตสากลที่ตรงกับโน๊ตไทยของบอส</li>
+                            <li>หากตอบผิด บอสจะหัวเราะเยาะและผู้เล่นเสีย 1 หัวใจ ❤️ พร้อมหน้าจอสั่นทันที (ไม่มีการนับถอยหลัง)</li>
+                            <li>หากตอบถูก จะเข้าสู่โหมดโจมตี คลิกปุ่มโจมตีรัวๆ ให้ครบ 10 ครั้ง (มีเสียงบอสกระอักเลือด) เพื่อลดเลือดบอสครั้งละ -1 (รวม -10)</li>
+                            <li>จากนั้นนับถอยหลัง 3 2 1 GO! เพื่อสู้ต่อจนกว่าบอสจะหมดเลือด</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeHowToPlay()" class="w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-xl font-bold cursor-pointer transition-all">
+                เข้าใจแล้ว
+            </button>
+        </div>
+
+        <div id="game-audio-control" class="absolute top-4 right-4 z-10 hidden">
+            <button onclick="toggleBackgroundMusic()" id="bgm-toggle-btn" class="bg-purple-800/80 hover:bg-purple-700 text-xs px-3 py-1.5 rounded-full border border-purple-400/30 flex items-center gap-1.5 transition-all cursor-pointer">
+                <span>🔊 เปิดเสียงเพลง</span>
+            </button>
+        </div>
+
+        <div id="game-header-stats" class="hidden flex justify-between items-center mb-6 border-b border-white/10 pb-4 pr-24">
+            <div>
+                <h1 class="text-2xl font-bold text-yellow-300 flex items-center gap-2">🎵 Music Note Hero</h1>
+                <p id="level-indicator" class="text-sm text-purple-200">ด่านที่ 1: ทายโน๊ตไทยจากโน๊ตสากล</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Hearts Display -->
+                <div id="hearts-container" class="flex gap-1 text-2xl" title="พลังชีวิต">
+                    ❤️ ❤️ ❤️
+                </div>
+                <div id="score-box" class="bg-purple-800/60 px-4 py-2 rounded-xl text-center border border-purple-500/40">
+                    <span class="text-xs text-purple-300 block">คะแนน / ความคืบหน้า</span>
+                    <span id="score-val" class="text-xl font-bold text-yellow-400">0 / 6</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="level-1-container" class="hidden space-y-6">
+            <div class="text-center bg-black/30 p-8 rounded-2xl border border-white/10 relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 text-8xl opacity-10">🎼</div>
+                <p class="text-sm text-indigo-300 mb-2">โน๊ตสากลนี้คืออะไร?</p>
+                <div id="note-display" class="text-7xl font-extrabold text-yellow-400 my-4 animate-float">C</div>
+                <p id="feedback-text" class="text-sm h-6 font-medium text-emerald-400"></p>
+            </div>
+
+            <p class="text-center text-sm text-gray-300 font-medium">เลือกโน๊ตภาษาไทยที่ถูกต้อง (ตัวอักษรเดี่ยว):</p>
+            
+            <!-- 4 Choice Buttons (Thai only - single character) -->
+            <div id="choices-container" class="grid grid-cols-2 gap-4">
+                <button onclick="checkLevel1Answer('ด')" class="choice-btn bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 p-4 rounded-xl font-bold text-3xl shadow-lg transform active:scale-95 transition-all cursor-pointer">ด</button>
+                <button onclick="checkLevel1Answer('ร')" class="choice-btn bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 p-4 rounded-xl font-bold text-3xl shadow-lg transform active:scale-95 transition-all cursor-pointer">ร</button>
+                <button onclick="checkLevel1Answer('ม')" class="choice-btn bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 p-4 rounded-xl font-bold text-3xl shadow-lg transform active:scale-95 transition-all cursor-pointer">ม</button>
+                <button onclick="checkLevel1Answer('ฟ')" class="choice-btn bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 p-4 rounded-xl font-bold text-3xl shadow-lg transform active:scale-95 transition-all cursor-pointer">ฟ</button>
+            </div>
+        </div>
+
+        <div id="level-2-container" class="hidden space-y-6">
+            <!-- Boss Stats -->
+            <div class="bg-red-950/40 border border-red-500/30 p-4 rounded-2xl">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-red-400 flex items-center gap-2">👹 บอส A (Boss A)</span>
+                    <span id="boss-hp-text" class="text-sm font-bold text-red-300">HP: 100 / 100</span>
+                </div>
+                <!-- HP Bar -->
+                <div class="w-full bg-gray-800 rounded-full h-4 overflow-hidden p-0.5 border border-red-900/50">
+                    <div id="boss-hp-bar" class="bg-gradient-to-r from-red-600 to-rose-500 h-full rounded-full transition-all duration-300" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- Boss Arena / Prompt with Animated Opening Mouth Displaying Thai Note -->
+            <div class="text-center bg-black/40 p-6 rounded-2xl border border-red-500/20 relative">
+                <div id="boss-avatar" class="text-6xl mb-2 animate-mouth inline-block">🐲</div>
+                <p id="boss-action-text" class="text-sm text-red-200 mb-2">บอส A อ้าปากแสดงโน๊ตไทยขึ้นมา!</p>
+                <div id="boss-prompt-note" class="text-5xl font-extrabold text-rose-400 my-2">ด</div>
+                <p id="boss-sub-feedback" class="text-xs text-gray-400 h-5">จงใส่โน๊ตสากลที่ตรงกับโน๊ตไทยนี้ให้ถูกต้อง!</p>
+            </div>
+
+            <!-- Boss Phase 1: Input choice -->
+            <div id="boss-input-panel" class="space-y-4">
+                <p class="text-center text-sm text-gray-300">เลือกโน๊ตสากลที่ถูกต้อง:</p>
+                <div class="grid grid-cols-5 gap-2">
+                    <button onclick="checkBossNote('C')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl font-bold text-lg cursor-pointer transition-all active:scale-95">C</button>
+                    <button onclick="checkBossNote('D')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl font-bold text-lg cursor-pointer transition-all active:scale-95">D</button>
+                    <button onclick="checkBossNote('E')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl font-bold text-lg cursor-pointer transition-all active:scale-95">E</button>
+                    <button onclick="checkBossNote('F')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl font-bold text-lg cursor-pointer transition-all active:scale-95">F</button>
+                    <button onclick="checkBossNote('G')" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl font-bold text-lg cursor-pointer transition-all active:scale-95">G</button>
+                </div>
+            </div>
+
+            <!-- Boss Phase 2: Attack Mashing Panel (Hidden initially) -->
+            <div id="boss-attack-panel" class="hidden text-center space-y-4 bg-emerald-950/30 border border-emerald-500/30 p-4 rounded-2xl">
+                <p class="text-emerald-300 font-bold text-lg animate-pulse">🎉 ตอบถูก! โจมตีบอสซะ! (คลิกรัวๆ ให้ครบ 10 ครั้ง)</p>
+                <div class="text-3xl font-extrabold text-yellow-400" id="mash-count-display">คลิกเหลืออีก: 10 ครั้ง</div>
+                <button onclick="mashAttack()" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold py-4 rounded-xl text-xl shadow-lg transform active:scale-95 transition-all cursor-pointer border border-emerald-400/40">
+                    ⚔️ โจมตีบอส! (คลิกเลย!)
+                </button>
+            </div>
+
+            <!-- Boss Phase 3: Countdown Panel (Hidden initially) -->
+            <div id="boss-countdown-panel" class="hidden text-center space-y-4 bg-amber-950/30 border border-amber-500/30 p-6 rounded-2xl">
+                <p class="text-amber-300 font-bold text-sm">เตรียมตัวรับการโจมตีรอบถัดไปของบอส...</p>
+                <div id="countdown-number-display" class="text-6xl font-black text-yellow-400 animate-pop">3</div>
+            </div>
+        </div>
+
+        <div id="game-over-modal" class="hidden text-center space-y-4 py-8">
+            <div id="end-game-icon" class="text-6xl">🏆</div>
+            <h2 id="end-game-title" class="text-3xl font-bold text-yellow-400">ยินดีด้วย! คุณชนะบอส A แล้ว!</h2>
+            <p id="end-game-subtitle" class="text-gray-300 text-sm">คุณคือปรมาจารย์ด้านโน๊ตดนตรีตัวจริง!</p>
+            <button onclick="returnToStartScreen()" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 px-6 py-3 rounded-xl font-bold shadow-lg cursor-pointer">
+                🏠 กลับสู่หน้าหลัก
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Game State Variables
+        let currentLevel = 0; // 0 = Start Screen, 1 = Level 1, 2 = Level 2 (Boss)
+        let score = 0; // Target 6 correct answers for Level 1
+        let playerHearts = 3; // 3 Hearts system
+        
+        // Level 1 Data Pool (C, D, E, F, G -> ด, ร, ม, ฟ, ซ)
+        const noteMap = {
+            'C': 'ด',
+            'D': 'ร',
+            'E': 'ม',
+            'F': 'ฟ',
+            'G': 'ซ'
+        };
+        const notesList = ['C', 'D', 'E', 'F', 'G'];
+        let currentNoteData = { note: 'C', thai: 'ด' };
+
+        // Level 2 Boss State
+        let bossHp = 100;
+        let currentBossThaiNote = 'ด';
+        let currentBossCorrectEnglish = 'C';
+        let remainingMashCount = 10;
+        const bossThaiToEnglish = {
+            'ด': 'C',
+            'ร': 'D',
+            'ม': 'E',
+            'ฟ': 'F',
+            'ซ': 'G'
+        };
+
+        // Web Audio API Background Music & Sound Effects Generator
+        let audioCtx = null;
+        let isBgmPlaying = false;
+        let bgmTimer = null;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Sound Effect 1: Correct Answer Bell (กระดิ่ง)
+        function playBellSound() {
+            initAudioContext();
+            try {
+                const now = audioCtx.currentTime;
+                const freqs = [1318.51, 1567.98]; 
+                freqs.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+                    gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.6);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.7);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Sound Effect 2: Wrong Answer Buzzer ("ตึดตึด")
+        function playBuzzerSound() {
+            initAudioContext();
+            try {
+                const now = audioCtx.currentTime;
+                [0, 0.15].forEach((delay) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(130.81, now + delay);
+
+                    gain.gain.setValueAtTime(0.15, now + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.12);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now + delay);
+                    osc.stop(now + delay + 0.15);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Sound Effect 3: Boss Gurgling/Pain Sound ("เสียงกะอักเลือด")
+        function playBossPainSound() {
+            initAudioContext();
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'triangle';
+                // Pitch drop for gurgling pain effect
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.25);
+
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Sound Effect 4: Boss Evil Laugh ("เสียงหัวเราะบอส")
+        function playBossLaughSound() {
+            initAudioContext();
+            try {
+                const now = audioCtx.currentTime;
+                [0, 0.18, 0.36].forEach((delay, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220 - (i * 20), now + delay);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + delay + 0.12);
+
+                    gain.gain.setValueAtTime(0.15, now + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now + delay);
+                    osc.stop(now + delay + 0.16);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function toggleBackgroundMusic() {
+            initAudioContext();
+            const btn = document.getElementById('bgm-toggle-btn');
+            const startBtn = document.getElementById('start-bgm-toggle-btn');
+            if (isBgmPlaying) {
+                stopBgmLoop();
+                isBgmPlaying = false;
+                if (btn) btn.innerHTML = '🔇 ปิดเสียงเพลง';
+                if (startBtn) startBtn.innerHTML = '🔇 ปิดเสียงเพลง';
+            } else {
+                startBgmLoop();
+                isBgmPlaying = true;
+                if (btn) btn.innerHTML = '🔊 เปิดเสียงเพลง';
+                if (startBtn) startBtn.innerHTML = '🔊 เปิดเสียงเพลง';
+            }
+        }
+
+        // Relaxing & mysterious BGM for Level 1 / Start screen
+        function playMysteriousChord() {
+            if (!audioCtx || !isBgmPlaying || currentLevel === 2) return;
+            try {
+                const frequencies = [220.00, 261.63, 329.63, 392.00, 440.00, 523.25];
+                const chosenFreq = frequencies[Math.floor(Math.random() * frequencies.length)];
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(chosenFreq, audioCtx.currentTime);
+
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 1.5);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 5.0);
+
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 5.2);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Intense & aggressive battle BGM for Level 2 (Boss Fight)
+        function playIntenseBattleBeat() {
+            if (!audioCtx || !isBgmPlaying || currentLevel !== 2) return;
+            try {
+                const now = audioCtx.currentTime;
+                const bassNotes = [110.00, 98.00, 82.41, 73.42]; 
+                const chosenNote = bassNotes[Math.floor(Math.random() * bassNotes.length)];
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(chosenNote, now);
+
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function startBgmLoop() {
+            if (currentLevel !== 2) {
+                playMysteriousChord();
+            } else {
+                playIntenseBattleBeat();
+            }
+            
+            bgmTimer = setInterval(() => {
+                if (currentLevel !== 2) {
+                    playMysteriousChord();
+                } else {
+                    playIntenseBattleBeat();
+                }
+            }, currentLevel === 2 ? 400 : 3200);
+        }
+
+        function stopBgmLoop() {
+            if (bgmTimer) {
+                clearInterval(bgmTimer);
+                bgmTimer = null;
+            }
+        }
+
+        // UI Flow Controls
+        function openHowToPlay() {
+            document.getElementById('how-to-play-modal').classList.remove('hidden');
+        }
+
+        function closeHowToPlay() {
+            document.getElementById('how-to-play-modal').classList.add('hidden');
+        }
+
+        function startGame() {
+            initAudioContext();
+            currentLevel = 1;
+            score = 0;
+            playerHearts = 3;
+            bossHp = 100;
+
+            document.getElementById('start-screen-container').classList.add('hidden');
+            document.getElementById('game-audio-control').classList.remove('hidden');
+            document.getElementById('game-header-stats').classList.remove('hidden');
+            document.getElementById('level-1-container').classList.remove('hidden');
+            document.getElementById('score-box').style.display = 'block';
+
+            updateScoreDisplay();
+            updateHeartsDisplay();
+            nextLevel1Question();
+
+            if (!isBgmPlaying) {
+                toggleBackgroundMusic();
+            } else {
+                stopBgmLoop();
+                startBgmLoop();
+            }
+        }
+
+        function returnToStartScreen() {
+            currentLevel = 0;
+            stopBgmLoop();
+            isBgmPlaying = false;
+
+            document.getElementById('game-audio-control').classList.add('hidden');
+            document.getElementById('game-header-stats').classList.add('hidden');
+            document.getElementById('level-1-container').classList.add('hidden');
+            document.getElementById('level-2-container').classList.add('hidden');
+            document.getElementById('game-over-modal').classList.add('hidden');
+            document.getElementById('start-screen-container').classList.remove('hidden');
+            document.getElementById('start-bgm-toggle-btn').innerHTML = '🔊 เปิด/ปิดเสียงดนตรี';
+        }
+
+        // Helper to trigger screen shake
+        function triggerScreenShake() {
+            const card = document.getElementById('game-main-card');
+            card.classList.add('animate-shake');
+            setTimeout(() => {
+                card.classList.remove('animate-shake');
+            }, 400);
+        }
+
+        // Update Hearts display
+        function updateHeartsDisplay() {
+            let heartsStr = '';
+            for (let i = 0; i < 3; i++) {
+                heartsStr += i < playerHearts ? '❤️ ' : '🖤 ';
+            }
+            document.getElementById('hearts-container').innerText = heartsStr.trim();
+
+            if (playerHearts <= 0) {
+                triggerGameOverLoss();
+            }
+        }
+
+        // Trigger Game Over Loss
+        function triggerGameOverLoss() {
+            document.getElementById('level-1-container').classList.add('hidden');
+            document.getElementById('level-2-container').classList.add('hidden');
+            document.getElementById('game-over-modal').classList.remove('hidden');
+            document.getElementById('end-game-icon').innerText = '💀';
+            document.getElementById('end-game-title').innerText = 'Game Over! หัวใจหมดแล้ว';
+            document.getElementById('end-game-title').className = 'text-3xl font-bold text-rose-500';
+            document.getElementById('end-game-subtitle').innerText = 'สู้ใหม่นะ! ลองฝึกฝนโน๊ตอีกรอบ';
+            document.getElementById('score-box').style.display = 'none';
+        }
+
+        // Initialize Level 1 Question
+        function nextLevel1Question() {
+            const randomNote = notesList[Math.floor(Math.random() * notesList.length)];
+            currentNoteData = {
+                note: randomNote,
+                thai: noteMap[randomNote]
+            };
+            document.getElementById('note-display').innerText = currentNoteData.note;
+            updateLevel1Choices(currentNoteData.thai);
+        }
+
+        function updateLevel1Choices(correctAnswer) {
+            const allThaiNotes = ['ด', 'ร', 'ม', 'ฟ', 'ซ'];
+            let wrongs = allThaiNotes.filter(n => n !== correctAnswer);
+            wrongs.sort(() => Math.random() - 0.5);
+            let choices = [correctAnswer, wrongs[0], wrongs[1], wrongs[2]];
+            choices.sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('choices-container');
+            container.innerHTML = '';
+
+            const colors = [
+                'from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700',
+                'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700',
+                'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700',
+                'from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700'
+            ];
+
+            choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn bg-gradient-to-r ${colors[index]} p-4 rounded-xl font-bold text-3xl shadow-lg transform active:scale-95 transition-all cursor-pointer`;
+                btn.innerText = choice;
+                btn.onclick = () => checkLevel1Answer(choice);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkLevel1Answer(selectedThai) {
+            const feedback = document.getElementById('feedback-text');
+            if (selectedThai === currentNoteData.thai) {
+                score++;
+                playBellSound();
+                feedback.innerText = "✨ ถูกต้องเก่งมาก! (+1 คะแนน)";
+                feedback.className = "text-sm h-6 font-medium text-emerald-400";
+                
+                updateScoreDisplay();
+
+                if (score >= 6) {
+                    setTimeout(() => {
+                        startLevel2();
+                    }, 800);
+                    return;
+                }
+
+                setTimeout(() => {
+                    feedback.innerText = "";
+                    nextLevel1Question();
+                }, 700);
+            } else {
+                playBuzzerSound();
+                playerHearts--;
+                updateHeartsDisplay();
+                triggerScreenShake();
+
+                feedback.innerText = `❌ ผิด! โน๊ตสากลนี้คือ "${currentNoteData.thai}" เสียหัวใจ 1 ดวง!`;
+                feedback.className = "text-sm h-6 font-medium text-rose-400";
+            }
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-val').innerText = `${score} / 6`;
+        }
+
+        // --- LEVEL 2 LOGIC ---
+        function startLevel2() {
+            currentLevel = 2;
+            document.getElementById('level-indicator').innerText = "ด่านที่ 2: สู้กับบอส A";
+            document.getElementById('score-box').style.display = 'none';
+            document.getElementById('level-1-container').classList.add('hidden');
+            document.getElementById('level-2-container').classList.remove('hidden');
+            
+            if (isBgmPlaying) {
+                stopBgmLoop();
+                startBgmLoop();
+            }
+
+            nextBossTurn();
+        }
+
+        function nextBossTurn() {
+            const thaiKeys = Object.keys(bossThaiToEnglish);
+            currentBossThaiNote = thaiKeys[Math.floor(Math.random() * thaiKeys.length)];
+            currentBossCorrectEnglish = bossThaiToEnglish[currentBossThaiNote];
+
+            document.getElementById('boss-prompt-note').innerText = currentBossThaiNote;
+            document.getElementById('boss-action-text').innerText = "บอส A อ้าปากแสดงโน๊ตไทยขึ้นมา!";
+            document.getElementById('boss-sub-feedback').innerText = "จงใส่โน๊ตสากลที่ตรงกับโน๊ตไทยนี้ให้ถูกต้อง!";
+            document.getElementById('boss-sub-feedback').className = "text-xs text-gray-400 h-5";
+            
+            document.getElementById('boss-input-panel').classList.remove('hidden');
+            document.getElementById('boss-attack-panel').classList.add('hidden');
+            document.getElementById('boss-countdown-panel').classList.add('hidden');
+        }
+
+        function checkBossNote(selectedEnglish) {
+            const subFeedback = document.getElementById('boss-sub-feedback');
+            if (selectedEnglish === currentBossCorrectEnglish) {
+                playBellSound();
+                subFeedback.innerText = "✅ ถูกต้อง! เตรียมตัวโจมตี!";
+                subFeedback.className = "text-xs text-emerald-400 h-5 font-bold";
+                
+                document.getElementById('boss-input-panel').classList.add('hidden');
+                document.getElementById('boss-attack-panel').classList.remove('hidden');
+                
+                remainingMashCount = 10;
+                document.getElementById('mash-count-display').innerText = `คลิกเหลืออีก: ${remainingMashCount} ครั้ง`;
+            } else {
+                playBuzzerSound();
+                playBossLaughSound();
+                playerHearts--;
+                updateHeartsDisplay();
+                triggerScreenShake();
+
+                subFeedback.innerText = `❌ ผิด! บอสหัวเราะเยาะ! โน๊ตไทย ${currentBossThaiNote} คือ "${currentBossCorrectEnglish}"! (-1 หัวใจ)`;
+                subFeedback.className = "text-xs text-rose-400 h-5 font-bold";
+            }
+        }
+
+        function mashAttack() {
+            remainingMashCount--;
+            document.getElementById('mash-count-display').innerText = `คลิกเหลืออีก: ${remainingMashCount} ครั้ง`;
+
+            playBossPainSound();
+
+            bossHp = Math.max(0, bossHp - 1);
+            updateBossHpBar();
+
+            const avatar = document.getElementById('boss-avatar');
+            avatar.classList.add('animate-pulse-fast');
+            setTimeout(() => { avatar.classList.remove('animate-pulse-fast'); }, 200);
+
+            if (bossHp <= 0) {
+                triggerVictory();
+                return;
+            }
+
+            if (remainingMashCount <= 0) {
+                document.getElementById('boss-attack-panel').classList.add('hidden');
+                startCountdownBeforeNextTurn();
+            }
+        }
+
+        function startCountdownBeforeNextTurn() {
+            const countdownPanel = document.getElementById('boss-countdown-panel');
+            const numberDisplay = document.getElementById('countdown-number-display');
+            countdownPanel.classList.remove('hidden');
+
+            let count = 3;
+            numberDisplay.innerText = count;
+            numberDisplay.className = "text-6xl font-black text-yellow-400 animate-pop";
+
+            const timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    numberDisplay.innerText = count;
+                    numberDisplay.className = "text-6xl font-black text-yellow-400 animate-pop";
+                } else if (count === 0) {
+                    numberDisplay.innerText = "GO!";
+                    numberDisplay.className = "text-6xl font-black text-emerald-400 animate-pop";
+                } else {
+                    clearInterval(timer);
+                    countdownPanel.classList.add('hidden');
+                    nextBossTurn();
+                }
+            }, 700);
+        }
+
+        function updateBossHpBar() {
+            document.getElementById('boss-hp-text').innerText = `HP: ${bossHp} / 100`;
+            document.getElementById('boss-hp-bar').style.width = `${bossHp}%`;
+        }
+
+        function triggerVictory() {
+            currentLevel = 0;
+            document.getElementById('level-2-container').classList.add('hidden');
+            document.getElementById('game-over-modal').classList.remove('hidden');
+            document.getElementById('end-game-icon').innerText = '🏆';
+            document.getElementById('end-game-title').innerText = 'ยินดีด้วย! คุณชนะบอส A แล้ว!';
+            document.getElementById('end-game-title').className = 'text-3xl font-bold text-yellow-400';
+            document.getElementById('end-game-subtitle').innerText = 'คุณคือปรมาจารย์ด้านโน๊ตดนตรีตัวจริง!';
+        }
+
+        window.onload = function() {
+            // Initial load ready at start screen
+        };
+    </script>
+</body>
+</html>

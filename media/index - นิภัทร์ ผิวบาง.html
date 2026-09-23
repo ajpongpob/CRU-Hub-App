@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isekai Music Academy - ผจญภัยโน้ตดนตรีต่างโลก</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #311042 50%, #1e1b4b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .glow-box {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.3);
+            border: 2px solid rgba(168, 85, 247, 0.4);
+        }
+
+        .piano-key {
+            transition: all 0.1s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .piano-key:active, .piano-key.active {
+            transform: translateY(4px);
+            filter: brightness(1.2);
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4c1d95;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-4 sm:p-6">
+
+    <header class="w-full max-w-2xl text-center mb-4">
+        <div class="inline-block px-4 py-1 bg-purple-900/60 border border-purple-500/50 rounded-full text-purple-300 text-xs sm:text-sm font-medium mb-2 floating">
+            ✨ โรงเรียนเวทมนตร์ดนตรีต่างโลก (Isekai Music Guild) ✨
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-400">
+            พิทักษ์โน้ตเวทมนตร์ Treble Clef
+        </h1>
+        <p class="text-xs sm:text-sm text-gray-300 mt-1">คลิกคีย์เปียโนเวทมนตร์ให้ตรงกับโน้ตบนบรรทัด 5 เส้น ก่อนหมดเวลาหรือสะสมแต้ม!</p>
+    </header>
+
+    <main class="w-full max-w-2xl bg-slate-900/80 backdrop-blur-md rounded-3xl glow-box p-4 sm:p-8 flex flex-col items-center relative overflow-hidden">
+        
+        <!-- Dashboard Stats -->
+        <div class="w-full flex justify-between items-center mb-6 bg-slate-800/80 px-3 sm:px-6 py-3 rounded-2xl border border-slate-700 gap-2">
+            <div class="flex items-center gap-1 sm:gap-2">
+                <span class="text-lg sm:text-xl">⭐</span>
+                <div>
+                    <div class="text-[10px] sm:text-xs text-gray-400">คะแนน</div>
+                    <div id="scoreDisplay" class="text-base sm:text-xl font-bold text-yellow-400">0</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-1 sm:gap-2">
+                <span class="text-lg sm:text-xl">🔥</span>
+                <div>
+                    <div class="text-[10px] sm:text-xs text-gray-400">คอมโบ</div>
+                    <div id="comboDisplay" class="text-base sm:text-xl font-bold text-pink-400">0</div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1 sm:gap-2">
+                <span class="text-lg sm:text-xl">⏳</span>
+                <div>
+                    <div class="text-[10px] sm:text-xs text-gray-400" id="timerLabel">เวลา</div>
+                    <div id="timerDisplay" class="text-base sm:text-xl font-bold text-cyan-400">30s</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Screen Overlay -->
+        <div id="startScreen" class="absolute inset-0 bg-slate-950/95 z-20 flex flex-col items-center justify-center p-6 text-center">
+            <div class="text-5xl mb-3 floating">🧙‍♂️🎶</div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-purple-300 mb-2">ยินดีต้อนรับสู่อาณาจักรโน้ตดนตรี!</h2>
+            <p class="text-xs sm:text-sm text-gray-300 max-w-md mb-4">
+                เลือกโหมดการผจญภัยที่คุณต้องการเพื่อช่วยกอบกู้โลกแฟนตาซีด้วยพลังแห่งเสียงดนตรี!
+            </p>
+            
+            <!-- Game Mode Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 w-full max-w-sm mb-6">
+                <button onclick="setGameMode('timed')" id="modeBtnTimed" class="flex-1 py-3 px-4 rounded-xl border border-purple-500 bg-purple-900/50 hover:bg-purple-800 text-white font-semibold text-sm transition-all shadow-md">
+                    ⏳ โหมดจับเวลา (30 วินาที)
+                </button>
+                <button onclick="setGameMode('target')" id="modeBtnTarget" class="flex-1 py-3 px-4 rounded-xl border border-slate-600 bg-slate-800/50 hover:bg-slate-700 text-white font-semibold text-sm transition-all shadow-md">
+                    🎯 โหมดสะสม 5 ข้อ
+                </button>
+            </div>
+
+            <button onclick="startGame()" class="w-full max-w-xs py-3.5 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-lg transform hover:scale-105 transition-all text-base border border-pink-400/50">
+                🚀 เริ่มต้นการผจญภัย
+            </button>
+        </div>
+
+        <!-- Game Over / Victory Overlay -->
+        <div id="gameOverScreen" class="absolute inset-0 bg-slate-950/95 z-20 hidden flex flex-col items-center justify-center p-6 text-center">
+            <div id="endEmoji" class="text-6xl mb-3">🏆</div>
+            <h2 id="endTitle" class="text-2xl sm:text-3xl font-bold text-yellow-400 mb-2">สรุปผลการผจญภัย</h2>
+            <p id="endMessage" class="text-sm text-gray-300 mb-4">คุณทำคะแนนได้ยอดเยี่ยมมาก!</p>
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 mb-6 w-full max-w-xs">
+                <div class="flex justify-between py-1 text-sm"><span class="text-gray-400">คะแนนรวม:</span> <span id="finalScore" class="font-bold text-yellow-400">0</span></div>
+                <div class="flex justify-between py-1 text-sm"><span class="text-gray-400">ตอบถูกทั้งหมด:</span> <span id="finalCorrect" class="font-bold text-green-400">0 ข้อ</span></div>
+                <div class="flex justify-between py-1 text-sm"><span class="text-gray-400">คอมโบสูงสุด:</span> <span id="finalCombo" class="font-bold text-pink-400">0</span></div>
+            </div>
+            <button onclick="startGame()" class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold rounded-2xl shadow-lg transform hover:scale-105 transition-all text-base border border-cyan-400/50">
+                🔄 เล่นใหม่อีกครั้ง
+            </button>
+        </div>
+
+        <!-- Music Staff (Treble Clef) SVG Display -->
+        <div class="w-full bg-slate-950/60 rounded-2xl border border-purple-500/30 p-4 mb-6 flex flex-col items-center relative min-h-[170px] sm:min-h-[190px] justify-center">
+            
+            <!-- Feedback Overlay Message -->
+            <div id="feedbackMsg" class="absolute top-3 right-4 text-sm sm:text-base font-bold transition-all duration-300 opacity-0 scale-90"></div>
+
+            <div class="w-full max-w-md overflow-x-auto py-2">
+                <svg id="staffSvg" viewBox="0 0 400 160" class="w-full h-auto drop-shadow-md">
+                    <!-- 5 Staff Lines -->
+                    <line x1="40" y1="40" x2="360" y2="40" stroke="#94a3b8" stroke-width="2"/>
+                    <line x1="40" y1="60" x2="360" y2="60" stroke="#94a3b8" stroke-width="2"/>
+                    <line x1="40" y1="80" x2="360" y2="80" stroke="#94a3b8" stroke-width="2"/>
+                    <line x1="40" y1="100" x2="360" y2="100" stroke="#94a3b8" stroke-width="2"/>
+                    <line x1="40" y1="120" x2="360" y2="120" stroke="#94a3b8" stroke-width="2"/>
+
+                    <!-- Treble Clef Symbol -->
+                    <text x="50" y="115" font-size="75" fill="#c084fc" font-family="serif">𝄞</text>
+
+                    <!-- Dynamic Ledger Line for Middle C -->
+                    <line id="ledgerC" x1="180" y1="140" x2="220" y2="140" stroke="#94a3b8" stroke-width="2" class="hidden"/>
+
+                    <!-- Note Head Group -->
+                    <g id="noteGroup" transform="translate(200, 0)">
+                        <ellipse id="noteHead" cx="0" cy="100" rx="9" ry="7" fill="#f43f5e" class="transition-all duration-200 shadow-lg"/>
+                        <line id="noteStem" x1="6" y1="100" x2="6" y2="60" stroke="#f43f5e" stroke-width="2.5"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div id="currentNoteLabel" class="text-xs text-purple-300 font-medium mt-1">
+                จงทายโน้ตบนบรรทัด 5 เส้นนี้ คือตัวอะไร?
+            </div>
+        </div>
+
+        <!-- Piano Keyboard Controls -->
+        <div class="w-full">
+            <div class="text-xs text-center text-gray-400 mb-2 font-medium">✨ กดคีย์เปียโนเวทมนตร์ด้านล่างเพื่อตอบ ✨</div>
+            <div class="grid grid-cols-7 gap-1.5 sm:gap-3 w-full">
+                
+                <button onclick="handlePlayerAnswer('C')" class="piano-key flex flex-col items-center justify-between py-3 px-1 bg-gradient-to-b from-red-100 to-red-300 hover:from-red-200 hover:to-red-400 text-red-950 font-bold rounded-xl shadow-md border-b-4 border-red-500 cursor-pointer">
+                    <span class="text-sm sm:text-xl">🎹</span>
+                    <span class="text-xs sm:text-lg font-black">C</span>
+                    <span class="text-[9px] sm:text-xs text-red-800 font-semibold">โด</span>
+                </button>
+
+                <button onclick="handlePlayerAnswer('D')" class="piano-key flex flex-col items-center justify-between py-3 px-1 bg-gradient-to-b from-orange-100 to-orange-300 hover:from-orange-200 hover:to-orange-400 text-orange-950 font-bold rounded-xl shadow-md border-b-4 border-orange-500 cursor-pointer">
+                    <span class="text-sm sm:text-xl">✨</span>
+                    <span class="text-xs sm:text-lg font-black">D</span>
+                    <span class="text-[9px] sm:text-xs text-orange-800 font-semibold">เร</span>
+                </button>
+
+                <button onclick="handlePlayerAnswer('E')" class="piano-key flex flex-col items-center justify-between py-3 px-1 bg-gradient-to-b from-yellow-100 to-yellow-300 hover:from-yellow-200 hover:to-yellow-400 text-yellow-950 font-bold rounded-xl shadow-md border-b-4 border-yellow-500 cursor-pointer">
+                    <span class="text-sm sm:text-xl">⭐</span>
+                    <span class="text-xs sm:text-lg font-black">E</span>
+                    <span class="text-[9px] sm:text-xs text-yellow-800 font-semibold">มี</span>
+                </button>
+
+                <button onclick="handlePlayerAnswer('F')" class="piano-key flex flex-col items-center justify-between py-3 px-1 bg-gradient-to-b from-green-100 to-green-300 hover:from-green-200 hover:to-green-400 text-green-950 font-bold rounded-xl shadow-md border-b-4 border-green-500 cursor-pointer">
+                    <span class="text-sm sm:text-xl">🌿</span>
+                    <span class="text-xs sm:text-lg font-black">F</span>
+                    <span class="text-[9px] sm:text-xs text-green-800 font-semibold">ฟา</span>
+                </button>
+
+                <button onclick="handlePlayerAnswer('G')" class="piano-key flex flex-col items-center justify-between py-3 px-1 bg-gradient-to-b from-sky-100 to-sky-300 hover:from-sky-200 hover:to-sky-400 text-sky-950 font-bold rounded-xl shadow-md border-b-4 border-sky-500 cursor-pointer">
+                    <span class="text-sm sm:text-xl">💎</span>
+                    <span class="text-xs sm:text-lg font-black">G</span>
+                    <span class="text-[9px] sm:text-xs text-sky-800 font-semibold">ซอล</span>
+                </button>
+
+                <button onclick="handlePlayerAnswer('A')" class="piano-key flex flex-col items-center justify-between py-3 px-1 bg-gradient-to-b from-blue-100 to-blue-300 hover:from-blue-200 hover:to-blue-400 text-blue-950 font-bold rounded-xl shadow-md border-b-4 border-blue-500 cursor-pointer">
+                    <span class="text-sm sm:text-xl">🔮</span>
+                    <span class="text-xs sm:text-lg font-black">A</span>
+                    <span class="text-[9px] sm:text-xs text-blue-800 font-semibold">ลา</span>
+                </button>
+
+                <button onclick="handlePlayerAnswer('B')" class="piano-key flex flex-col items-center justify-between py-3 px-1 bg-gradient-to-b from-purple-100 to-purple-300 hover:from-purple-200 hover:to-purple-400 text-purple-950 font-bold rounded-xl shadow-md border-b-4 border-purple-500 cursor-pointer">
+                    <span class="text-sm sm:text-xl">👑</span>
+                    <span class="text-xs sm:text-lg font-black">B</span>
+                    <span class="text-[9px] sm:text-xs text-purple-800 font-semibold">ที</span>
+                </button>
+
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="mt-4 text-center text-xs text-gray-400">
+        Isekai Music Academy &copy; 2026 | เรียนรู้โน้ตดนตรีสไตล์แฟนตาซี
+    </footer>
+
+    <script>
+        const noteFrequencies = {
+            'C': 261.63, // Middle C
+            'D': 293.66, 
+            'E': 329.63, 
+            'F': 349.23, 
+            'G': 392.00, 
+            'A': 440.00, 
+            'B': 493.88  
+        };
+
+        const notePositions = {
+            'C': { y: 140, showLedger: true, stemUp: true },
+            'D': { y: 130, showLedger: false, stemUp: true },
+            'E': { y: 120, showLedger: false, stemUp: true },
+            'F': { y: 110, showLedger: false, stemUp: true },
+            'G': { y: 100, showLedger: false, stemUp: true },
+            'A': { y: 90,  showLedger: false, stemUp: false },
+            'B': { y: 80,  showLedger: false, stemUp: false }
+        };
+
+        const notesList = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let correctCount = 0;
+        let gameMode = 'timed'; // 'timed' or 'target'
+        let timeLeft = 30;
+        let timerInterval = null;
+        let currentNote = 'C';
+        let isGameActive = false;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playNoteSound(note) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const freq = noteFrequencies[note];
+            if (!freq) return;
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+            gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.4, audioCtx.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.2);
+        }
+
+        function setGameMode(mode) {
+            gameMode = mode;
+            const btnTimed = document.getElementById('modeBtnTimed');
+            const btnTarget = document.getElementById('modeBtnTarget');
+            
+            if (mode === 'timed') {
+                btnTimed.className = "flex-1 py-3 px-4 rounded-xl border border-purple-500 bg-purple-900/50 hover:bg-purple-800 text-white font-semibold text-sm transition-all shadow-md";
+                btnTarget.className = "flex-1 py-3 px-4 rounded-xl border border-slate-600 bg-slate-800/50 hover:bg-slate-700 text-white font-semibold text-sm transition-all shadow-md";
+            } else {
+                btnTarget.className = "flex-1 py-3 px-4 rounded-xl border border-purple-500 bg-purple-900/50 hover:bg-purple-800 text-white font-semibold text-sm transition-all shadow-md";
+                btnTimed.className = "flex-1 py-3 px-4 rounded-xl border border-slate-600 bg-slate-800/50 hover:bg-slate-700 text-white font-semibold text-sm transition-all shadow-md";
+            }
+        }
+
+        function startGame() {
+            initAudio();
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            correctCount = 0;
+            isGameActive = true;
+
+            document.getElementById('scoreDisplay').innerText = score;
+            document.getElementById('comboDisplay').innerText = combo;
+
+            if (gameMode === 'timed') {
+                timeLeft = 30;
+                document.getElementById('timerLabel').innerText = 'เวลา';
+                document.getElementById('timerDisplay').innerText = timeLeft + 's';
+            } else {
+                timeLeft = 0; // counts correct responses toward 5 target
+                document.getElementById('timerLabel').innerText = 'เป้าหมาย';
+                document.getElementById('timerDisplay').innerText = '0/5';
+            }
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+
+            generateNewNote();
+
+            if (timerInterval) clearInterval(timerInterval);
+            if (gameMode === 'timed') {
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    document.getElementById('timerDisplay').innerText = timeLeft + 's';
+                    if (timeLeft <= 0) {
+                        endGame();
+                    }
+                }, 1000);
+            }
+        }
+
+        function generateNewNote() {
+            let newNote;
+            do {
+                newNote = notesList[Math.floor(Math.random() * notesList.length)];
+            } while (newNote === currentNote && notesList.length > 1);
+
+            currentNote = newNote;
+            updateStaffDisplay(currentNote);
+        }
+
+        function updateStaffDisplay(note) {
+            const pos = notePositions[note];
+            const noteHead = document.getElementById('noteHead');
+            const noteStem = document.getElementById('noteStem');
+            const ledgerC = document.getElementById('ledgerC');
+
+            noteHead.setAttribute('cy', pos.y);
+
+            if (pos.stemUp) {
+                noteStem.setAttribute('x1', '6');
+                noteStem.setAttribute('x2', '6');
+                noteStem.setAttribute('y1', pos.y);
+                noteStem.setAttribute('y2', pos.y - 40);
+            } else {
+                noteStem.setAttribute('x1', '-6');
+                noteStem.setAttribute('x2', '-6');
+                noteStem.setAttribute('y1', pos.y);
+                noteStem.setAttribute('y2', pos.y + 40);
+            }
+
+            if (pos.showLedger) {
+                ledgerC.setAttribute('y1', pos.y);
+                ledgerC.setAttribute('y2', pos.y);
+                ledgerC.classList.remove('hidden');
+            } else {
+                ledgerC.classList.add('hidden');
+            }
+        }
+
+        function handlePlayerAnswer(selectedNote) {
+            if (!isGameActive) return;
+
+            playNoteSound(selectedNote);
+
+            const feedbackEl = document.getElementById('feedbackMsg');
+
+            if (selectedNote === currentNote) {
+                correctCount++;
+                combo++;
+                if (combo > maxCombo) maxCombo = combo;
+                
+                let points = 100 + (combo * 15);
+                score += points;
+
+                document.getElementById('scoreDisplay').innerText = score;
+                document.getElementById('comboDisplay').innerText = combo;
+
+                if (gameMode === 'target') {
+                    document.getElementById('timerDisplay').innerText = correctCount + '/5';
+                    if (correctCount >= 5) {
+                        endGame();
+                        return;
+                    }
+                }
+
+                feedbackEl.innerText = 'ถูกต้อง! 🎉 +' + points;
+                feedbackEl.className = 'absolute top-3 right-4 text-sm sm:text-base font-bold text-green-400 transition-all duration-300 opacity-100 scale-100';
+
+                generateNewNote();
+            } else {
+                combo = 0;
+                document.getElementById('comboDisplay').innerText = combo;
+
+                feedbackEl.innerText = 'ผิด ลองใหม่นะ ❌';
+                feedbackEl.className = 'absolute top-3 right-4 text-sm sm:text-base font-bold text-pink-400 transition-all duration-300 opacity-100 scale-100';
+            }
+
+            setTimeout(() => {
+                feedbackEl.classList.remove('opacity-100', 'scale-100');
+                feedbackEl.classList.add('opacity-0', 'scale-90');
+            }, 800);
+        }
+
+        function endGame() {
+            isGameActive = false;
+            if (timerInterval) clearInterval(timerInterval);
+
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('finalCorrect').innerText = correctCount + ' ข้อ';
+            document.getElementById('finalCombo').innerText = maxCombo;
+
+            const endTitle = document.getElementById('endTitle');
+            const endEmoji = document.getElementById('endEmoji');
+            const endMessage = document.getElementById('endMessage');
+
+            if (gameMode === 'target' && correctCount >= 5) {
+                endEmoji.innerText = '🏆👑';
+                endTitle.innerText = 'ภารกิจสำเร็จลุล่วง!';
+                endMessage.innerText = 'คุณพิชิตเป้าหมายการอ่านโน้ต 5 ข้อได้สำเร็จอย่างยอดเยี่ยม!';
+            } else if (score >= 800) {
+                endEmoji.innerText = '👑🧙‍♂️';
+                endTitle.innerText = 'สุดยอดมหาเวทแห่งเสียงเพลง!';
+                endMessage.innerText = 'คุณกอบกู้ดินแดนเวทมนตร์สำเร็จด้วยคะแนนอันน่าทึ่ง!';
+            } else {
+                endEmoji.innerText = '🪄💪';
+                endTitle.innerText = 'สรุปผลการผจญภัย';
+                endMessage.innerText = 'พยายามได้ดี! ลองฝึกฝนบ่อยๆ แล้วจะเก่งขึ้นแน่นอน!';
+            }
+
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
