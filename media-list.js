@@ -1,6 +1,6 @@
 /*
-  รายการสำรองสำหรับ CRU Teaching Media Hub
-  index.html จะค้นหาไฟล์ HTML ใน media/ เพิ่มให้อัตโนมัติเมื่อเชื่อมต่อ GitHub ได้
+  รายการสื่อที่ตรวจสอบแล้วสำหรับ CRU Teaching Media Hub
+  เพิ่มสื่อใหม่โดยเพิ่มข้อมูลไฟล์ HTML ที่เปิดใช้งานได้ในรายการนี้
 */
 
 window.MEDIA_LIST = [

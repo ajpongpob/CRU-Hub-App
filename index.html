@@ -147,16 +147,6 @@
       featuredGridEl.innerHTML = items.length ? items.map(item => `<button class="feature-card" type="button" data-id="${escapeHtml(item.id)}"><span class="feature-icon">${escapeHtml(item.icon || "📘")}</span><h4>${escapeHtml(item.title || item.id)}</h4><p>${escapeHtml(item.description || "สื่อการเรียนรู้จาก CRU Teaching Media Hub")}</p><span class="tag">${escapeHtml(item.category || "LEARNING MEDIA")} →</span></button>`).join("") : '<div class="empty">กำลังเตรียมสื่อการเรียนรู้</div>';
       featuredGridEl.querySelectorAll(".feature-card").forEach(card => card.addEventListener("click", () => openMedia(card.dataset.id)));
     }
-    async function loadRepositoryMedia() {
-      try {
-        const response = await fetch("https://api.github.com/repos/ajpongpob/CRU-Hub-App/contents/media?ref=main", { headers: { Accept: "application/vnd.github+json" } });
-        if (!response.ok) throw new Error("Media directory unavailable");
-        const files = await response.json(), existing = getMedia(), knownPaths = new Set(existing.map(item => decodeURIComponent(item.file)));
-        const discovered = files.filter(file => file.type === "file" && file.name.toLowerCase().endsWith(".html") && !knownPaths.has(`media/${file.name}`)).map(file => ({ id: `media-${file.name}`, title: file.name.replace(/\.html$/i, ""), file: `media/${encodeURIComponent(file.name)}`, category: "สื่อการเรียนรู้", description: "สื่อ HTML ในโฟลเดอร์ media", icon: "🎼" }));
-        window.MEDIA_LIST = [...existing, ...discovered];
-      } catch (error) { console.info("ใช้รายการสื่อที่กำหนดไว้", error); }
-      renderList(searchInputEl.value); renderFeatured();
-    }
     function openMedia(id) {
       const item = getMedia().find(entry => entry.id === id); if (!item) return;
       activeId = id; frameEl.src = item.file; frameEl.style.display = "block"; welcomeEl.style.display = "none"; currentTitleEl.textContent = item.title || item.id; openNewTabEl.href = item.file; openNewTabEl.style.display = ""; history.replaceState(null, "", `#${encodeURIComponent(item.id)}`); renderList(searchInputEl.value);
@@ -167,7 +157,7 @@
     menuToggleEl.addEventListener("click", () => sidebarEl.classList.toggle("open"));
     homeButtonEl.addEventListener("click", showHome);
     viewAllButtonEl.addEventListener("click", () => { sidebarEl.classList.add("open"); searchInputEl.focus(); });
-    renderList(); renderFeatured(); loadRepositoryMedia();
+    renderList(); renderFeatured();
     const initialId = decodeURIComponent(location.hash.replace(/^#/, "")); if (initialId) openMedia(initialId);
   </script>
 </body>
