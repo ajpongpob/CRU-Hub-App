@@ -151,8 +151,8 @@
       try {
         const response = await fetch("https://api.github.com/repos/ajpongpob/CRU-Hub-App/contents/media?ref=main", { headers: { Accept: "application/vnd.github+json" } });
         if (!response.ok) throw new Error("Media directory unavailable");
-        const files = await response.json(), existing = getMedia(), knownPaths = new Set(existing.map(item => item.file));
-        const discovered = files.filter(file => file.type === "file" && !knownPaths.has(`media/${file.name}`)).map(file => ({ id: `media-${file.name}`, title: file.name, file: `media/${encodeURIComponent(file.name)}`, category: `${file.name.split(".").pop().toUpperCase()} file`, description: "ไฟล์ในโฟลเดอร์ media", icon: file.name.endsWith(".html") ? "🎼" : "📎" }));
+        const files = await response.json(), existing = getMedia(), knownPaths = new Set(existing.map(item => decodeURIComponent(item.file)));
+        const discovered = files.filter(file => file.type === "file" && file.name.toLowerCase().endsWith(".html") && !knownPaths.has(`media/${file.name}`)).map(file => ({ id: `media-${file.name}`, title: file.name.replace(/\.html$/i, ""), file: `media/${encodeURIComponent(file.name)}`, category: "สื่อการเรียนรู้", description: "สื่อ HTML ในโฟลเดอร์ media", icon: "🎼" }));
         window.MEDIA_LIST = [...existing, ...discovered];
       } catch (error) { console.info("ใช้รายการสื่อที่กำหนดไว้", error); }
       renderList(searchInputEl.value); renderFeatured();
